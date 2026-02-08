@@ -1,0 +1,62 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "moduleDetection": "force",
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/style/*": ["./src/styles/*"],
+      "@/feature/*": ["./src/components/features/*"],
+      "@/layout/*": ["./src/components/layouts/*"],
+      "@/module/*": ["./src/components/modules/*"],
+      "@/element/*": ["./src/components/elements/*"],
+      "@/schema/*": ["./src/schemas/*"],
+      "@/icon/*": ["./src/components/icons/*"],
+      "@/context/*": ["./src/contexts/*"],
+      "@/wrapper/*": ["./src/wrappers/*"],
+      "@/hook/*": ["./src/hooks/*"],
+      "@/class/*": ["./src/classes/*"],
+      "@/instance/*": ["./src/instances/*"],
+      "@/util/*": ["./src/utils/*"],
+      "@/constant/*": ["./src/constants/*"],
+      "@/fixture/*": ["./tests/fixtures/*"],
+      "@/seed/*": ["./tests/seeds/*"],
+      "@/e2e-support/*": ["./tests/cypress/support/*"],
+      "@/mock/*": ["./tests/mocks/*"],
+      "@/test-util/*": ["./tests/utils/*"],
+      "@/factory/*": ["./tests/factories/*"],
+      "@/test-setup/*": ["./tests/setup/*"],
+      "@/type/*": ["./src/types/*"],
+      "@/image/*": ["./src/assets/images/*"],
+      "@/font/*": ["./src/assets/fonts/*"]
+    },
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "types": ["vitest/globals"]
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.cjs",
+    "**/*.js",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": ["node_modules"]
+}
