@@ -12,6 +12,7 @@ cypress.env.json
 .env
 .env.*
 !.env.example
+!.env.test
 
 _.env
 _.env.*
