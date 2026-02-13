@@ -3,10 +3,10 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 
-import type { ReactNode } from 'react';
+import { type ReactNode, useEffect } from 'react';
 
 import { useMutation } from '@tanstack/react-query';
-import { LayoutDashboard, LogOut, Settings } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Separator } from '@/element/separator';
@@ -33,11 +33,7 @@ import { unwrapServerAction } from '@/util/server';
 import { getErrorMessage } from '@/util/string';
 
 import { logout } from '@/app/actions/auth';
-
-const NAV_ITEMS = [
-  { label: 'Tableau de bord', href: '/dashboard', icon: LayoutDashboard },
-  { label: 'Paramètres', href: '/dashboard/settings', icon: Settings },
-];
+import SIDEBAR from '@/constants/sidebar';
 
 const isRouteActive = (pathname: string, href: string): boolean => {
   if (href === '/dashboard') return pathname === '/dashboard';
@@ -62,30 +58,37 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
   const userInitial = user?.name?.charAt(0).toUpperCase() ?? '?';
 
+  useEffect(() => {
+    const prefetchItems = SIDEBAR.flatMap((group) => group.items).filter((item) => item.shouldPrefetch);
+    for (const item of prefetchItems) router.prefetch(item.href);
+  }, []);
+
   return (
     <TooltipProvider>
       <SidebarProvider>
         <Sidebar>
           <SidebarContent className="mt-12">
-            <SidebarGroup>
-              <SidebarGroupLabel>Navigation</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {NAV_ITEMS.map((item) => (
-                    <SidebarMenuItem key={item.href}>
-                      <SidebarMenuButton
-                        render={<Link href={item.href} />}
-                        isActive={isRouteActive(pathname, item.href)}
-                        tooltip={item.label}
-                      >
-                        <item.icon />
-                        <span>{item.label}</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
+            {SIDEBAR.map((group) => (
+              <SidebarGroup key={group.label}>
+                <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {group.items.map(({ icon: Icon, ...item }) => (
+                      <SidebarMenuItem key={item.href}>
+                        <SidebarMenuButton
+                          render={<Link href={item.href} />}
+                          isActive={isRouteActive(pathname, item.href)}
+                          tooltip={item.label}
+                        >
+                          <Icon />
+                          <span>{item.label}</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            ))}
           </SidebarContent>
 
           <SidebarSeparator />
