@@ -4,7 +4,7 @@ import { createContext, type PropsWithChildren, useContext, useState } from 'rea
 
 import { getErrorMessage } from '@/util/string';
 
-import type { IToast } from '@/type/radix-ui';
+import type { IToast } from '@/type/toast';
 
 interface IContext {
   toasts: IToast[];

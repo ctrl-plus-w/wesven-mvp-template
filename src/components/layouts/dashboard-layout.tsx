@@ -73,11 +73,13 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 <SidebarMenu>
                   {NAV_ITEMS.map((item) => (
                     <SidebarMenuItem key={item.href}>
-                      <SidebarMenuButton asChild isActive={isRouteActive(pathname, item.href)} tooltip={item.label}>
-                        <Link href={item.href}>
-                          <item.icon />
-                          <span>{item.label}</span>
-                        </Link>
+                      <SidebarMenuButton
+                        render={<Link href={item.href} />}
+                        isActive={isRouteActive(pathname, item.href)}
+                        tooltip={item.label}
+                      >
+                        <item.icon />
+                        <span>{item.label}</span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   ))}
