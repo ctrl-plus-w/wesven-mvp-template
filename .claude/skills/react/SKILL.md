@@ -12,6 +12,7 @@ description: React component conventions and patterns for this project. Use when
 5. Extends the props with `PropsWithChildren` (from "react") when needed instead of creating a `children` prop.
 6. When implemeting a component, if it needs a util function, put in in an appropriate file in the utils folder. Do not put utils functions inside the react components unless other statements tell you to do so.
 7. If you create a component to refactor a complex feature, try to make the props match as much as possible the behavior. For example, when creating a "controlled" component for a form, if the props takes the `control` and `name` props, make the type generic and extend `FieldValues`.
+8. In the props, if using a onChange property, use `Dispatch<SetStateAction<TYPE>>` instead of a direct function.
 
 ### Optional Rules (Only if applicable)
 
