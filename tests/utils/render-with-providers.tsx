@@ -4,8 +4,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { RenderOptions, RenderResult } from '@testing-library/react';
 import { render } from '@testing-library/react';
 
-import { ToastContext } from '@/context/toast-context';
-
 export interface MockSessionUser {
   id: string;
   email: string;
@@ -50,17 +48,7 @@ const createWrapper = (options: ProvidersOptions = {}) => {
   const queryClient = options.queryClient ?? createTestQueryClient();
 
   const Wrapper = ({ children }: { children: ReactNode }) => {
-    const toastContext = {
-      toasts: [],
-      addToast: () => null,
-      removeToast: () => null,
-    };
-
-    return (
-      <QueryClientProvider client={queryClient}>
-        <ToastContext.Provider value={toastContext}>{children}</ToastContext.Provider>
-      </QueryClientProvider>
-    );
+    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
   };
 
   return Wrapper;

@@ -8,8 +8,6 @@ import { Inter } from 'next/font/google';
 
 import { Toaster } from '@/element/sonner';
 
-import ToastProvider from '@/context/toast-context';
-
 import PostHogProvider from '@/wrapper/posthog-provider';
 
 import { cn } from '@/utils/style';
@@ -35,12 +33,10 @@ const RootLayout = ({ children }: IProps) => {
   return (
     <html lang="en">
       <body className={cn('min-h-screen bg-background font-sans antialiased', inter.variable)}>
-        <ToastProvider>
-          <PostHogProvider>
-            <QueryClientWrapper>{children}</QueryClientWrapper>
-          </PostHogProvider>
-          <Toaster />
-        </ToastProvider>
+        <PostHogProvider>
+          <QueryClientWrapper>{children}</QueryClientWrapper>
+        </PostHogProvider>
+        <Toaster />
       </body>
     </html>
   );
