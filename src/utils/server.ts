@@ -76,7 +76,14 @@ export const createServerAction = <Return, Args extends unknown[] = []>(
       return { success: true, value };
     } catch (error) {
       if (error instanceof ServerActionError)
-        return { success: false, error: { name: error.name, message: error.message, stack: error.stack } };
+        return {
+          success: false,
+          error: {
+            name: error.name,
+            message: error.message,
+            stack: process.env.NODE_ENV !== 'production' ? error.stack : undefined,
+          },
+        };
       console.error(error);
       if (error instanceof APIError)
         return {
@@ -87,7 +94,7 @@ export const createServerAction = <Return, Args extends unknown[] = []>(
               error.body?.code && error.body.code in ERRORS.AUTH
                 ? ERRORS.AUTH[error.body.code as keyof typeof ERRORS.AUTH]
                 : error.message || 'An error occurred',
-            stack: error.stack,
+            stack: process.env.NODE_ENV !== 'production' ? error.stack : undefined,
           },
         };
       throw error;
