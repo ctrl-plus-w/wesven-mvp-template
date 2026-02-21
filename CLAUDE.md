@@ -115,6 +115,9 @@ This category covers general coding style and practices to ensure consistency an
 5. If a condition expression only takes one line, do not use curly braces `{}` for the block.
 6. Never use the `any` type unless in a `react-hook-form` default values object. Always be specific with types to ensure type safety and maintainability.
 7. When using `switch`, do not put braces in the blocks unless necessary.
+8. Do not use the keyword `as` in Typescript unless needed. Prefer types declaration.
+9. When creating custom types for a feature, do not put it in the file, put it in the /types folder.
+10. When using types that are infered from the database, create a named type in the /types/db.d.ts file
 
 ## Naming Conventions
 
