@@ -1,4 +1,3 @@
-import type { Auth } from 'better-auth';
 import { describe, expect, it, type Mock } from 'vitest';
 
 import { ServerActionError, type ServerActionResult, unwrapServerAction } from '@/util/server';
@@ -32,22 +31,20 @@ export interface AuthenticatedContext {
  * import auth from '@/instance/auth/server';
  *
  * const { setupUnauthenticated, setupNoActiveOrganization, setupAuthenticatedUser } =
- *   createAuthSetup(auth as MockedAuth);
+ *   createAuthSetup(auth);
  */
-export const createAuthSetup = (auth: Auth) => {
-  const authMock = auth as unknown as MockedAuth;
-
+export const createAuthSetup = (auth: MockedAuth) => {
   return {
     /** Mock auth to return null (unauthenticated user) */
     setupUnauthenticated: () => {
-      authMock.api.getSession.mockResolvedValue(null);
+      auth.api.getSession.mockResolvedValue(null);
     },
 
     /** Create fully authenticated user */
     setupAuthenticatedUser: async (): Promise<AuthenticatedContext> => {
       const user = await insertUser(createUserData());
       const session = await insertSession(createSessionData(user.id));
-      authMock.api.getSession.mockResolvedValue({ user, session });
+      auth.api.getSession.mockResolvedValue({ user, session });
       return { user, session };
     },
   };

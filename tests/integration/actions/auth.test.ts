@@ -35,7 +35,7 @@ import {
   updatePassword,
   updateUserInfo,
 } from '@/app/actions/auth';
-import { createAuthSetup } from '@/test-util/auth';
+import { createAuthSetup, type MockedAuth } from '@/test-util/auth';
 
 type MockedAuthApi = {
   getSession: Mock;
@@ -50,7 +50,7 @@ type MockedAuthApi = {
 };
 
 const authApi = (auth as unknown as { api: MockedAuthApi }).api;
-const { setupUnauthenticated } = createAuthSetup(auth);
+const { setupUnauthenticated } = createAuthSetup(auth as unknown as MockedAuth);
 
 describe('Auth Server Actions', () => {
   beforeEach(() => {
