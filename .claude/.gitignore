@@ -1,0 +1,8 @@
+# Claude Code local settings (when developing in this repo directly)
+.claude/
+
+# Claude Code local settings (when mounted as .claude/ in a consumer)
+settings.local.json
+
+.DS_Store
+.idea/
