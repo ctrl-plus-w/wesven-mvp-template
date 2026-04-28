@@ -5,7 +5,7 @@ import { Command } from '@commander-js/extra-typings';
 import { type ExecaChildProcess, execa } from 'execa';
 import { type DefaultRenderer, Listr, type ListrTaskWrapper, type SimpleRenderer } from 'listr2';
 
-import { resetTables } from '@/util/db';
+import { getAvailablePort } from './utils/get-available-port';
 
 const promisifiedExec = promisify(exec);
 
@@ -28,11 +28,22 @@ const injectTaskStdout = (
   };
 };
 
-const stdOutEnv = { FORCE_COLOR: 'true', NODE_ENV: 'test' as const };
-
 let testOutput = '';
 
 const main = async (watch: boolean) => {
+  const dbPort = await getAvailablePort();
+  const databaseUrl = `postgres://postgres:postgres@localhost:${dbPort}/main`;
+
+  process.env.DATABASE_URL = databaseUrl;
+  process.env.TEST_DB_PORT = String(dbPort);
+
+  const stdOutEnv = {
+    FORCE_COLOR: 'true',
+    NODE_ENV: 'test' as const,
+    DATABASE_URL: databaseUrl,
+    TEST_DB_PORT: String(dbPort),
+  };
+
   const tasks = new Listr([
     {
       title: 'Setting up the test database',
@@ -40,8 +51,11 @@ const main = async (watch: boolean) => {
         task.newListr(
           [
             {
-              title: 'Starting the database container',
-              task: () => promisifiedExec('docker compose -f compose.test.yaml up --detach --wait'),
+              title: `Starting the database container (host port ${dbPort})`,
+              task: () =>
+                promisifiedExec('docker compose -f compose.test.yaml up --detach --wait', {
+                  env: { ...process.env, ...stdOutEnv },
+                }),
             },
             {
               title: 'Running the migrations',
@@ -49,7 +63,10 @@ const main = async (watch: boolean) => {
             },
             {
               title: 'Resetting the database',
-              task: () => resetTables(),
+              task: async () => {
+                const { resetTables } = await import('@/util/db');
+                await resetTables();
+              },
             },
           ],
           { concurrent: false, rendererOptions: { collapseSubtasks: false } },
@@ -78,7 +95,10 @@ const main = async (watch: boolean) => {
   const cleanupTasks = new Listr([
     {
       title: 'Stopping the database container',
-      task: () => promisifiedExec('docker compose -f compose.test.yaml down -v'),
+      task: () =>
+        promisifiedExec('docker compose -f compose.test.yaml down -v', {
+          env: { ...process.env, ...stdOutEnv },
+        }),
     },
   ]);
 

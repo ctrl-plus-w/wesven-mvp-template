@@ -7,7 +7,7 @@ services:
     volumes:
       - test_data:/var/lib/postgresql/data
     ports:
-      - "5439:5432"
+      - "${TEST_DB_PORT:-5439}:5432"
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
