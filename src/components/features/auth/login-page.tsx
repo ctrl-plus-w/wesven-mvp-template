@@ -20,6 +20,11 @@ import { getErrorMessage } from '@/util/string';
 
 import { login } from '@/app/actions/auth';
 
+const getDefaultValues = (): LoginSchemaType => ({
+  email: '',
+  password: '',
+});
+
 const LoginPage = () => {
   const router = useRouter();
 
@@ -29,7 +34,7 @@ const LoginPage = () => {
     formState: { errors },
   } = useForm<LoginSchemaType>({
     resolver: standardSchemaResolver(LoginSchema),
-    defaultValues: {},
+    defaultValues: getDefaultValues(),
   });
 
   const { isPending, mutateAsync } = useMutation({

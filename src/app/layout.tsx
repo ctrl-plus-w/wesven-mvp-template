@@ -25,11 +25,11 @@ export const metadata: Metadata = {
   },
 };
 
-interface IProps {
+interface RootLayoutProps {
   children?: ReactNode;
 }
 
-const RootLayout = ({ children }: IProps) => {
+const RootLayout = ({ children }: RootLayoutProps) => {
   return (
     <html lang="en">
       <body className={cn('min-h-screen bg-background font-sans antialiased', inter.variable)}>

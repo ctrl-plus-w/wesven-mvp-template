@@ -19,6 +19,10 @@ import { getErrorMessage } from '@/util/string';
 
 import { requestResetPassword } from '@/app/actions/auth';
 
+const getDefaultValues = (): RequestResetPasswordSchemaType => ({
+  email: '',
+});
+
 const RequestResetPasswordPage = () => {
   const {
     handleSubmit,
@@ -26,7 +30,7 @@ const RequestResetPasswordPage = () => {
     formState: { errors },
   } = useForm<RequestResetPasswordSchemaType>({
     resolver: standardSchemaResolver(RequestResetPasswordSchema),
-    defaultValues: {},
+    defaultValues: getDefaultValues(),
   });
 
   const { isPending, mutateAsync } = useMutation({

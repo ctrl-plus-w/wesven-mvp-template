@@ -2,10 +2,10 @@
 
 import DashboardLayout from '@/layout/dashboard-layout';
 
-import useUser from '@/hook/data/use-user';
+import useGetUser from '@/hook/data/use-user';
 
 const DashboardHomePage = () => {
-  const { data: user } = useUser();
+  const { data: user } = useGetUser();
 
   return (
     <DashboardLayout>

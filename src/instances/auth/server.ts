@@ -41,7 +41,7 @@ const auth = betterAuth({
 
   database: drizzleAdapter(db, {
     provider: 'pg',
-    schema: schema,
+    schema,
   }),
 
   plugins: [admin(), nextCookies()],

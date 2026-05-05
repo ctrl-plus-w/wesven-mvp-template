@@ -24,6 +24,11 @@ export interface ResetPasswordPageProps {
   token: string;
 }
 
+const getDefaultValues = (): ResetPasswordSchemaType => ({
+  password: '',
+  confirmPassword: '',
+});
+
 const ResetPasswordPage = ({ token }: ResetPasswordPageProps) => {
   const router = useRouter();
 
@@ -33,7 +38,7 @@ const ResetPasswordPage = ({ token }: ResetPasswordPageProps) => {
     formState: { errors },
   } = useForm<ResetPasswordSchemaType>({
     resolver: standardSchemaResolver(ResetPasswordSchema),
-    defaultValues: {},
+    defaultValues: getDefaultValues(),
   });
 
   const { isPending, mutateAsync } = useMutation({

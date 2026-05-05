@@ -11,7 +11,7 @@ declare global {
   var db: PostgresJsDatabase<typeof schema> | undefined;
 }
 
-// biome-ignore lint: suspicious/noExplicitAny
+// biome-ignore lint/suspicious/noRedeclare: shadows the `global.db` declaration above to cache the client across hot reloads
 let db: PostgresJsDatabase<typeof schema>;
 
 if (ENV.NODE_ENV === 'production') {

@@ -12,7 +12,7 @@ import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/e
 import { Input } from '@/element/input';
 import RequiredMark from '@/element/required-mark';
 
-import useUser, { USER_QUERY_KEY } from '@/hook/data/use-user';
+import useGetUser, { USER_QUERY_KEY } from '@/hook/data/use-user';
 
 import { UpdateUserInfoSchema, type UpdateUserInfoSchemaType } from '@/util/schemas/auth';
 import { unwrapServerAction } from '@/util/server';
@@ -25,7 +25,7 @@ const getDefaultValues = (user?: User): UpdateUserInfoSchemaType => ({
 });
 
 const UpdateUserInfoForm = () => {
-  const { data: user } = useUser();
+  const { data: user } = useGetUser();
   const queryClient = useQueryClient();
 
   const {

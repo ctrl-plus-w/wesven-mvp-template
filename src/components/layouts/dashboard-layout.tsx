@@ -27,7 +27,7 @@ import {
 } from '@/element/sidebar';
 import { TooltipProvider } from '@/element/tooltip';
 
-import useUser from '@/hook/data/use-user';
+import useGetUser from '@/hook/data/use-user';
 
 import { unwrapServerAction } from '@/util/server';
 import { getErrorMessage } from '@/util/string';
@@ -48,7 +48,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const pathname = usePathname();
   const router = useRouter();
 
-  const { data: user } = useUser();
+  const { data: user } = useGetUser();
 
   const { isPending, mutateAsync: logoutMutate } = useMutation({
     mutationFn: async () => await unwrapServerAction(logout()),

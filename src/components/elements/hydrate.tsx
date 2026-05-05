@@ -16,7 +16,7 @@ export interface HydrateFnProps extends PropsWithChildren {
 
 export interface HydrateValueProps extends PropsWithChildren {
   queryKey: QueryKey;
-  value: any;
+  value: unknown;
 }
 
 const Hydrate = async ({ children, ...props }: HydrateFnProps | HydrateValueProps) => {

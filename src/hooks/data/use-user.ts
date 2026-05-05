@@ -6,7 +6,7 @@ import auth from '@/instance/auth/client';
 
 export const USER_QUERY_KEY = ['users', 'current'];
 
-const useUser = () => {
+const useGetUser = () => {
   return useQuery({
     queryFn: async () => {
       const response = await auth.getSession();
@@ -18,4 +18,4 @@ const useUser = () => {
   });
 };
 
-export default useUser;
+export default useGetUser;

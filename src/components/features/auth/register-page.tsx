@@ -20,6 +20,13 @@ import { getErrorMessage } from '@/util/string';
 
 import { register as registerAction } from '@/app/actions/auth';
 
+const getDefaultValues = (): RegisterSchemaType => ({
+  name: '',
+  email: '',
+  password: '',
+  confirmPassword: '',
+});
+
 const RegisterPage = () => {
   const router = useRouter();
 
@@ -29,7 +36,7 @@ const RegisterPage = () => {
     formState: { errors },
   } = useForm<RegisterSchemaType>({
     resolver: standardSchemaResolver(RegisterSchema),
-    defaultValues: {},
+    defaultValues: getDefaultValues(),
   });
 
   const { isPending, mutateAsync } = useMutation({
@@ -87,17 +94,15 @@ const RegisterPage = () => {
               <FieldDescription>Veuillez confirmer votre mot de passe.</FieldDescription>
             </Field>
 
-            <FieldGroup>
-              <Field>
-                <Button type="submit" isLoading={isPending}>
-                  Créer mon compte
-                </Button>
+            <Field>
+              <Button type="submit" isLoading={isPending}>
+                Créer mon compte
+              </Button>
 
-                <FieldDescription className="px-6 text-center">
-                  Vous avez déjà un compte ? <Link href="/login">Se connecter</Link>
-                </FieldDescription>
-              </Field>
-            </FieldGroup>
+              <FieldDescription className="px-6 text-center">
+                Vous avez déjà un compte ? <Link href="/login">Se connecter</Link>
+              </FieldDescription>
+            </Field>
           </FieldGroup>
         </form>
       </CardContent>

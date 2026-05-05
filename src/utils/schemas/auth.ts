@@ -15,12 +15,6 @@ export const RequestResetPasswordSchema = z.object({
 
 export type RequestResetPasswordSchemaType = z.infer<typeof RequestResetPasswordSchema>;
 
-export const RequestRegisterSchema = z.object({
-  email: z.email(),
-});
-
-export type RequestRegisterSchemaType = z.infer<typeof RequestRegisterSchema>;
-
 export const RegisterSchema = z
   .object({
     name: z.string().min(2),
