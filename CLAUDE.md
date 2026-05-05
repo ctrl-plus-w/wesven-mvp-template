@@ -15,10 +15,15 @@ PROJECT_NAME /
 │   ├── assets/
 │   ├── classes/
 │   ├── components/
+│   ├── contexts/
 │   ├── hooks/
+│   │   ├── data/
+│   │   └── mutations/
 │   ├── instances/
 │   ├── schemas/
+│   ├── scripts/
 │   ├── utils/
+│   │   └── schemas/
 │   ├── constants/
 │   ├── types/
 │   ├── wrappers/
@@ -52,7 +57,13 @@ The `layouts/` subfolder contains layout components that are used regularly thro
 
 Layout components are generally used in the page itself rather than in `layout.tsx` files because it's sometimes necessary to have pages without this layout component.
 
+**/src/contexts**: This folder contains bare `React.createContext` definitions paired with their consumer hooks. The provider HOC that wraps the app (or a subtree) lives in `/src/wrappers` instead — keep the context value/consumer here, the provider over there.
+
 **/src/hooks**: This folder is intended for custom React hooks. Hooks allow encapsulating reusable logic that can be shared between multiple components. For example, a hook to manage form state, detect screen size, or interact with a specific API.
+
+The `data/` subfolder contains React Query *query* hooks for client-side data fetching.
+
+The `mutations/` subfolder contains shared or optimistic React Query *mutation* hooks. One-off mutations stay inline in the component that uses them (see Domain Conventions §4.1).
 
 **/src/instances**: This folder contains the application's singleton instances. A singleton instance is a unique object that is created once and shared throughout the application.
 
@@ -62,7 +73,11 @@ You'll find here notably the database connection with Drizzle, the React Query c
 
 These schemas also serve as the basis for generating database migrations.
 
+**/src/scripts**: This folder contains dev/CI tooling scripts executed via `tsx` (e.g., `e2e-runner.ts`, `integration-runner.ts`, db seeders, codegen, one-off ops). These scripts are invoked from `package.json` and are not imported by the Next.js app.
+
 **/src/utils**: This folder contains utility functions reusable throughout the application. These are pure functions that perform common operations like string manipulation, date formatting, or data transformations.
+
+The `schemas/` subfolder contains zod validation schemas (form/input validation). Note: "schemas" here refers to zod, distinct from `/src/schemas` which holds drizzle DB table definitions.
 
 **/src/constants**: This folder contains constant values used in the application. Rather than repeating magic values in the code, they're centralized here. This includes, for example, error messages, configuration values, pagination limits, or any other value that doesn't change during application execution.
 
@@ -89,7 +104,7 @@ This category covers conventions related to data fetching, server-side rendering
 1. When the data is fetched client side, use React Query for data fetching and caching.
 2. If the data is prefetched on the server side, do not show a loading state on the client side. Instead, directly render the data.
 3. When fetching some data, create a custom hook in the `src/hooks/data/` folder for better reusability and separation of concerns.
-4. When creating a mutation, if the mutation is used in multiple places or is optimistic, create a custom hook in the `src/hooks/data/` folder. If it is only used in one place, define the mutation logic directly within the component file where it is used.
+4. When creating a mutation, if the mutation is used in multiple places or is optimistic, create a custom hook in the `src/hooks/mutations/` folder (query hooks live in `src/hooks/data/`). If it is only used in one place, define the mutation logic directly within the component file where it is used.
 5. A React Query `queryClient.invalidateQueries(...)` function is asynchronous. If you need to perform an action after invalidation, use the `await` keyword to ensure the invalidation is complete before proceeding.
 
 ## Domain Conventions
