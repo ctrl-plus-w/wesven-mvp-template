@@ -85,7 +85,7 @@ describe('1.1 Global Authentication (Dashboard)', () => {
         cy.visit('/dashboard/settings');
 
         cy.contains('button', 'Se déconnecter').click();
-        cy.url().should('eq', 'http://localhost:3000/login');
+        cy.location('pathname').should('eq', '/login');
         cy.getCookie('<PROJECT_NAME>.session_token').should('not.exist');
       });
     });
