@@ -1,18 +1,16 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
-import { getSessionCookie } from 'better-auth/cookies';
-
 import AUTH_CONFIG from '@/constant/auth';
 
-export async function middleware(request: NextRequest) {
-  const sessionCookie = getSessionCookie(request, {
-    cookiePrefix: AUTH_CONFIG.cookie_prefix,
-  });
+const hasSessionCookie = (request: NextRequest) => {
+  const prefix = AUTH_CONFIG.cookie_prefix;
+  return request.cookies.has(`${prefix}.session_token`) || request.cookies.has(`__Secure-${prefix}.session_token`);
+};
 
+export function middleware(request: NextRequest) {
   // THIS IS NOT SECURE!
-  // This is the recommended approach to optimistically redirect users
-  // We recommend handling auth checks in each page/route
-  if (!sessionCookie) return NextResponse.redirect(new URL('/', request.url));
+  // Optimistic redirect only — real session validation happens per page/route.
+  if (!hasSessionCookie(request)) return NextResponse.redirect(new URL('/', request.url));
 
   return NextResponse.next();
 }
