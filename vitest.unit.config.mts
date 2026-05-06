@@ -1,13 +1,6 @@
-import react from '@vitejs/plugin-react';
-import tsconfigPaths from 'vite-tsconfig-paths';
-import { defineConfig } from 'vitest/config';
+import { unitConfig } from '@wesven/testing/vitest-config';
+import { mergeConfig } from 'vitest/config';
 
-export default defineConfig({
-  plugins: [tsconfigPaths(), react()],
-  test: {
-    environment: 'node',
-    include: ['tests/unit/**/*.test.{ts,tsx}'],
-    setupFiles: ['tests/setup/vitest-unit.setup.ts'],
-    globals: true,
-  },
+export default mergeConfig(unitConfig, {
+  test: { setupFiles: ['./tests/setup/vitest-unit.setup.ts'] },
 });

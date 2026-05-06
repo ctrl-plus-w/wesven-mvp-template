@@ -1,10 +1,3 @@
-import { afterEach, beforeEach, vi } from 'vitest';
+import { setupUnitTests } from '@wesven/testing/vitest-setup';
 
-beforeEach(() => {
-  vi.spyOn(console, 'error').mockImplementation(() => {});
-  vi.spyOn(console, 'warn').mockImplementation(() => {});
-});
-
-afterEach(() => {
-  vi.clearAllMocks();
-});
+setupUnitTests();
