@@ -115,7 +115,62 @@ Three levels of testing are available:
 
 ## Deployment
 
-Built for Vercel deployment. Requires:
+This template deploys via **GitHub Actions running the Vercel CLI** to **Vercel hosting** with a **Vercel-managed Neon Postgres** database. CI is the single source of production deploys, so no untested code ever ships.
 
-- A PostgreSQL database
-- Environment variables configured (see `.env.example`)
+### One-time setup
+
+1. **Use this template** on GitHub (`Use this template → Create a new repository`) or fork it.
+
+2. **Create a Vercel project** pointing at your fork (https://vercel.com/new). Framework preset: Next.js. Then **disable Vercel's auto-deploy on push** so CI is the only deploy path:
+
+   > Project → Settings → Git → "Ignored Build Step" → set to `exit 0`.
+
+   Without this, every push to `main` will deploy twice (once via Vercel's git integration, once via this workflow).
+
+3. **Provision Neon Postgres** via Vercel:
+
+   > Project → Storage → Create Database → Neon (Marketplace) → attach to Production.
+
+   This auto-injects `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `POSTGRES_URL`, `POSTGRES_URL_NON_POOLING`, `POSTGRES_PRISMA_URL`, and friends.
+
+4. **Set the remaining production env vars** in Vercel (Project → Settings → Environment Variables → Production):
+
+   | Variable                   | Source                                                 |
+   | -------------------------- | ------------------------------------------------------ |
+   | `DATABASE_URL`             | auto-injected by Neon                                  |
+   | `DATABASE_URL_UNPOOLED`    | auto-injected by Neon                                  |
+   | `BLOB_READ_WRITE_TOKEN`    | auto-injected by Vercel Blob (Storage → Create → Blob) |
+   | `BETTER_AUTH_SECRET`       | `openssl rand -base64 32`                              |
+   | `BETTER_AUTH_URL`          | your production URL, e.g. `https://app.example.com`    |
+   | `NEXT_PUBLIC_APP_URL`      | same as `BETTER_AUTH_URL`                              |
+   | `RESEND_FROM_EMAIL`        | configured sender on https://resend.com                |
+   | `RESEND_API_KEY`           | from Resend dashboard                                  |
+   | `NEXT_PUBLIC_POSTHOG_KEY`  | from PostHog project settings                          |
+   | `NEXT_PUBLIC_POSTHOG_HOST` | `https://us.i.posthog.com` (or your region)            |
+
+5. **Link the project locally** to grab the Vercel org and project IDs:
+
+   ```bash
+   pnpm dlx vercel link
+   cat .vercel/project.json   # contains orgId and projectId
+   ```
+
+   (Alternatively, copy them from Vercel: Account Settings → org ID; Project Settings → project ID.)
+
+6. **Create the `ci-cd` GitHub environment** (Repo → Settings → Environments → New environment → `ci-cd`) and add these **Environment secrets**:
+   - `VERCEL_TOKEN` — generate at https://vercel.com/account/tokens
+   - `VERCEL_ORG_ID` — from step 5
+   - `VERCEL_PROJECT_ID` — from step 5
+   - `DATABASE_URL` — copy from Vercel project env
+   - `DATABASE_URL_UNPOOLED` — copy from Vercel project env (used by the `migrate` job for DDL)
+   - `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `NEXT_PUBLIC_APP_URL`
+   - `RESEND_FROM_EMAIL`, `RESEND_API_KEY`
+   - `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST`
+
+7. **Enable deploys** by adding a repo **Variable** (not a Secret):
+
+   > Repo → Settings → Secrets and variables → Actions → **Variables** tab → New repository variable: `DEPLOYMENT_ENABLED=true`.
+
+   The `migrate` and `deploy` jobs are gated on this variable, so without it CI runs lint + tests only.
+
+8. **Push to `main`.** CI runs `lint` → `unit-tests` + `integration-tests` + `e2e-tests` (parallel) → `migrate` → `deploy`. The first green run publishes the app.
