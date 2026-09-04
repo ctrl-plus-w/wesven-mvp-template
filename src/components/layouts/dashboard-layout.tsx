@@ -8,7 +8,8 @@ import { type ReactNode, useEffect } from 'react';
 import { AppShell } from '@astryxdesign/core/AppShell';
 import { Avatar } from '@astryxdesign/core/Avatar';
 import { HStack } from '@astryxdesign/core/HStack';
-import { SideNav, SideNavItem, SideNavSection } from '@astryxdesign/core/SideNav';
+import { MobileNav } from '@astryxdesign/core/MobileNav';
+import { SideNav, SideNavItem, SideNavRenderContext, SideNavSection } from '@astryxdesign/core/SideNav';
 import { Text } from '@astryxdesign/core/Text';
 import { useToast } from '@astryxdesign/core/Toast';
 import { VStack } from '@astryxdesign/core/VStack';
@@ -55,9 +56,17 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     for (const item of prefetchItems) router.prefetch(item.href);
   }, [router]);
 
+  /**
+   * Astryx's drawer footer positions itself with `margin-block-start: auto`,
+   * which needs a flex parent — and `MobileNav`'s content area is a plain
+   * block, so the footer lands directly under the last nav item instead of at
+   * the bottom. Supplying the flex column here is what puts the user block and
+   * the sign-out button where they sit on desktop.
+   */
+  const drawerFill = { display: 'flex', flexDirection: 'column', minHeight: '100%' } as const;
+
   const sideNav = (
     <SideNav
-      collapsible
       footer={
         <VStack gap={1}>
           <HStack gap={2} align="center" paddingInline={2} paddingBlock={1}>
@@ -98,8 +107,21 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     </SideNav>
   );
 
+  /**
+   * The same `sideNav` element, re-rendered in `drawer-content` mode inside a
+   * drawer this layout owns. Handing `AppShell` a `mobileNav` of our own is
+   * what buys the wrapper above; the automatic drawer gives no way in.
+   */
+  const mobileNav = (
+    <MobileNav>
+      <div style={drawerFill}>
+        <SideNavRenderContext value="drawer-content">{sideNav}</SideNavRenderContext>
+      </div>
+    </MobileNav>
+  );
+
   return (
-    <AppShell sideNav={sideNav} contentPadding={4}>
+    <AppShell sideNav={sideNav} mobileNav={mobileNav} contentPadding={4}>
       <VStack gap={4}>{children}</VStack>
     </AppShell>
   );

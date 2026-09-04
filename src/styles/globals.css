@@ -29,11 +29,17 @@
     block-size: 100%;
   }
 
+  /*
+   * Astryx's own token names. `--color-bg-base` and `--text-size-body` are not
+   * among them, so both declarations were dropping out at computed-value time
+   * and every page outside an Astryx surface — the four auth pages — painted
+   * the browser default instead of the theme's page background.
+   */
   body {
-    background-color: var(--color-bg-base);
+    background-color: var(--color-background-body);
     color: var(--color-text-primary);
     font-family: var(--font-family-body);
-    font-size: var(--text-size-body);
+    font-size: var(--text-body-size);
   }
 }
 
