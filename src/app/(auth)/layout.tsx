@@ -1,7 +1,13 @@
 import type { PropsWithChildren } from 'react';
 
+import { Center } from '@astryxdesign/core/Center';
+
 const AuthLayout = ({ children }: PropsWithChildren) => {
-  return <div className="flex h-screen w-full items-center justify-center">{children}</div>;
+  return (
+    <Center height="100dvh" padding={4}>
+      {children}
+    </Center>
+  );
 };
 
 export default AuthLayout;

@@ -1,18 +1,21 @@
 'use client';
 
-import Link from 'next/link';
+import NextLink from 'next/link';
 import { useRouter } from 'next/navigation';
 
+import { Button } from '@astryxdesign/core/Button';
+import { FormLayout } from '@astryxdesign/core/FormLayout';
+import { HStack } from '@astryxdesign/core/HStack';
+import { Link } from '@astryxdesign/core/Link';
+import { useToast } from '@astryxdesign/core/Toast';
+import { VStack } from '@astryxdesign/core/VStack';
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
-import { toast } from 'sonner';
 
-import { Button } from '@/element/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/element/card';
-import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/element/field';
-import { Input } from '@/element/input';
-import RequiredMark from '@/element/required-mark';
+import AuthCard from '@/layout/auth-card';
+
+import TextField from '@/element/text-field';
 
 import { LoginSchema, type LoginSchemaType } from '@/util/schemas/auth';
 import { unwrapServerAction } from '@/util/server';
@@ -27,75 +30,51 @@ const getDefaultValues = (): LoginSchemaType => ({
 
 const LoginPage = () => {
   const router = useRouter();
+  const showToast = useToast();
 
-  const {
-    handleSubmit,
-    register,
-    formState: { errors },
-  } = useForm<LoginSchemaType>({
+  const { control, handleSubmit } = useForm<LoginSchemaType>({
     resolver: standardSchemaResolver(LoginSchema),
     defaultValues: getDefaultValues(),
   });
 
   const { isPending, mutateAsync } = useMutation({
     mutationFn: async (values: LoginSchemaType) => await unwrapServerAction(login(values)),
-    onError: (err) => toast.error(getErrorMessage(err)),
+    onError: (err) => showToast({ type: 'error', body: getErrorMessage(err) }),
     onSuccess: () => router.push('/dashboard'),
   });
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader>
-        <CardTitle>Connectez-vous à votre compte</CardTitle>
-        <CardDescription>Entrez votre email ci-dessous pour vous connecter</CardDescription>
-      </CardHeader>
+    <AuthCard
+      title="Connectez-vous à votre compte"
+      description="Entrez votre email ci-dessous pour vous connecter"
+      footer={
+        <>
+          Vous n'avez pas de compte ?{' '}
+          <Link as={NextLink} href="/register">
+            S'inscrire
+          </Link>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit((values) => mutateAsync(values))} noValidate>
+        <VStack gap={4}>
+          <FormLayout>
+            <TextField control={control} name="email" type="email" label="Email" isRequired />
 
-      <CardContent>
-        <form onSubmit={handleSubmit((values) => mutateAsync(values))}>
-          <FieldGroup>
-            <Field data-invalid={!!errors.email}>
-              <FieldLabel htmlFor="email">
-                Email <RequiredMark />
-              </FieldLabel>
-              <Input id="email" {...register('email')} required aria-invalid={!!errors.email} />
-              {!!errors.email && <FieldError errors={[errors.email]} />}
-            </Field>
-
-            <Field data-invalid={!!errors.password}>
-              <div className="flex items-center">
-                <FieldLabel htmlFor="password">
-                  Mot de passe <RequiredMark />
-                </FieldLabel>
-                <Link
-                  href="/reset-password"
-                  className="ml-auto inline-block text-xs underline-offset-4 hover:underline"
-                >
+            <VStack gap={1}>
+              <TextField control={control} name="password" type="password" label="Mot de passe" isRequired />
+              <HStack justify="end">
+                <Link as={NextLink} href="/reset-password" size="sm">
                   Mot de passe oublié ?
                 </Link>
-              </div>
+              </HStack>
+            </VStack>
+          </FormLayout>
 
-              <Input
-                id="password"
-                type="password"
-                {...register('password')}
-                required
-                aria-invalid={!!errors.password}
-              />
-              {!!errors.password && <FieldError errors={[errors.password]} />}
-            </Field>
-
-            <Field>
-              <Button type="submit" isLoading={isPending}>
-                Se connecter
-              </Button>
-              <FieldDescription className="text-center">
-                Vous n'avez pas de compte ? <Link href="/register">S'inscrire</Link>
-              </FieldDescription>
-            </Field>
-          </FieldGroup>
-        </form>
-      </CardContent>
-    </Card>
+          <Button type="submit" label="Se connecter" isLoading={isPending} width="100%" />
+        </VStack>
+      </form>
+    </AuthCard>
   );
 };
 

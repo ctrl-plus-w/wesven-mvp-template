@@ -22,9 +22,6 @@
     },
     "rules": {
       "recommended": true,
-      "complexity": {
-        "noImportantStyles": "off"
-      },
       "correctness": {
         "useExhaustiveDependencies": "off",
         "useImportExtensions": "off"
@@ -39,19 +36,9 @@
         "noArrayIndexKey": "info",
         "noExplicitAny": "info",
         "useIterableCallbackReturn": "off",
-        "noUnknownAtRules": {
-          "level": "error",
-          "options": {
-            "ignore": ["tailwind"]
-          }
-        },
+        "noUnknownAtRules": "error",
         "noVar": "error"
       }
-    }
-  },
-  "css": {
-    "parser": {
-      "tailwindDirectives": true
     }
   },
   "javascript": {

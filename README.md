@@ -4,8 +4,8 @@ A production-ready Next.js starter template with authentication, database, and t
 
 ## Tech Stack
 
-- **Framework**: Next.js 15, React 18, TypeScript
-- **Styling**: Tailwind CSS 4
+- **Framework**: Next.js 15, React 19, TypeScript
+- **Design system**: [Astryx](https://github.com/facebook/astryx) (`@astryxdesign/core`)
 - **Database**: Drizzle ORM (PostgreSQL)
 - **Authentication**: Better Auth
 - **Data Fetching**: React Query
@@ -20,7 +20,7 @@ A production-ready Next.js starter template with authentication, database, and t
 
 ### Prerequisites
 
-- Node.js (see `.nvmrc` for version)
+- Node.js >= 22.13 (see `.nvmrc`; the Astryx CLI enforces this floor)
 - pnpm 8
 - Docker
 

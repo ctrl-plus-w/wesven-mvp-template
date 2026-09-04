@@ -1,5 +1,9 @@
 'use client';
 
+import { Heading } from '@astryxdesign/core/Heading';
+import { Text } from '@astryxdesign/core/Text';
+import { VStack } from '@astryxdesign/core/VStack';
+
 import DashboardLayout from '@/layout/dashboard-layout';
 
 import useGetUser from '@/hook/data/use-user';
@@ -9,8 +13,10 @@ const DashboardHomePage = () => {
 
   return (
     <DashboardLayout>
-      <h1 className="text-2xl font-bold">Bienvenue, {user?.name}</h1>
-      <p className="text-muted-foreground">Bienvenue sur votre tableau de bord.</p>
+      <VStack gap={1}>
+        <Heading level={1}>Bienvenue, {user?.name}</Heading>
+        <Text color="secondary">Bienvenue sur votre tableau de bord.</Text>
+      </VStack>
     </DashboardLayout>
   );
 };

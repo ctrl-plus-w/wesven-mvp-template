@@ -47,7 +47,7 @@ The `api/` subfolder contains traditional REST API routes. These HTTP endpoints 
 
 **/src/components**: This folder groups all React components of the application, organized by their level of abstraction and reusability.
 
-The `elements/` subfolder contains the most basic and atomic UI components. These are the fundamental building blocks of the interface: buttons, input fields, cards, labels, etc. These components are generally sourced from shadcn/ui and are highly reusable throughout the application.
+The `elements/` subfolder contains the most basic and atomic UI components. In this template it stays deliberately thin: the atoms come from `@astryxdesign/core`, so `elements/` only holds the small bridges between Astryx and the rest of the stack — `text-field.tsx` (react-hook-form to Astryx's controlled inputs) and `hydrate.tsx` (React Query dehydration). Do not re-implement a button, a card or an input here; import it from Astryx.
 
 The `modules/` subfolder contains more complex components that combine multiple elements to form reusable functional blocks. For example, a header component, a generic modal, or a pagination component.
 
@@ -87,7 +87,7 @@ The `schemas/` subfolder contains zod validation schemas (form/input validation)
 
 These wrappers are generally used in the root layout to wrap the entire application (often `layout.tsx`).
 
-**/src/styles**: This folder contains the application's global styles. The main file defines Tailwind CSS configuration as well as custom CSS variables used for the application theme (colors, spacing, etc.).
+**/src/styles**: This folder contains the application's global styles. `globals.css` declares the cascade-layer order the whole app depends on, imports Astryx's reset and component CSS, and sets the font tokens. Design tokens themselves are not defined here — they live in the theme at `/src/instances/astryx/theme.ts`.
 
 **/public**: This folder contains static assets served directly by the web server. Any file placed here is publicly accessible via its path. This is where you save the favicon and metadata files. Note: For assets, use `/src/assets` instead.
 
@@ -96,6 +96,17 @@ These wrappers are generally used in the root layout to wrap the entire applicat
 It's important to never modify these files manually. They are automatically generated from schemas defined in `/src/schemas`.
 
 If you've generated a migration you didn't intend to perform (and haven't migrated it yet), you can delete the associated SQL file along with the snapshot file and remove the corresponding object in the `meta/_journal.json` file (e.g., `{ "idx": 43, "version": "7", "when": 1768650453063, "tag": "0043_wooden_living_mummy", "breakpoints": true }`).
+
+## Design system
+
+The UI is built on [Astryx](https://github.com/facebook/astryx) (`@astryxdesign/core`) and nothing else. `design/design.md` is the binding document: it decides which component carries which meaning, and it outranks personal preference in review.
+
+1. **Astryx is the only UI kit.** No Tailwind, no shadcn/ui, no ad-hoc CSS component layer. If Astryx has no component for what you need, compose one from Astryx primitives in `components/modules/` rather than reaching for another library.
+2. **Do not author StyleX.** `@astryxdesign/core` ships pre-compiled CSS, so the app needs no StyleX compiler — and writing `stylex.create()` in app code would require adding one. For the rare structural override, use a CSS Module through `className`, or the `style` prop.
+3. **Extend through the theme.** New tokens, component variants and icon names belong in `/src/instances/astryx/theme.ts`, which is the single place the design system is configured.
+4. **Astryx inputs are controlled.** `TextInput` and friends require `value` and hand `onChange` the string rather than the event, so react-hook-form's `{...register(name)}` spread does not apply. Use `@/element/text-field`, which wires `useController` and surfaces the validation message through the input's own `status` prop.
+5. **Toasts are `info` or `error`.** Astryx has no success type on purpose. A completed action either speaks for itself or gets an `info` toast; never fake a green one.
+6. **Semantic layers.** Interior spacing uses `SpacingStep` props (`gap`, `padding`) rather than raw pixels, and colors come from tokens rather than literals.
 
 ## Data handling, query and mutations
 

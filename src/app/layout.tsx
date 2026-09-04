@@ -6,12 +6,9 @@ import '@/style/globals.css';
 
 import { Inter } from 'next/font/google';
 
-import { Toaster } from '@/element/sonner';
-
+import AstryxProvider from '@/wrapper/astryx-provider';
 import PostHogProvider from '@/wrapper/posthog-provider';
-
-import { cn } from '@/utils/style';
-import QueryClientWrapper from '@/wrappers/query-client';
+import QueryClientWrapper from '@/wrapper/query-client';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -29,14 +26,19 @@ interface RootLayoutProps {
   children?: ReactNode;
 }
 
+/**
+ * No `data-theme` on `<html>`: the theme runs in `system` mode, which the
+ * reset already resolves to `color-scheme: light dark`. See AstryxProvider.
+ */
 const RootLayout = ({ children }: RootLayoutProps) => {
   return (
-    <html lang="en">
-      <body className={cn('min-h-screen bg-background font-sans antialiased', inter.variable)}>
-        <PostHogProvider>
-          <QueryClientWrapper>{children}</QueryClientWrapper>
-        </PostHogProvider>
-        <Toaster />
+    <html lang="en" className={inter.variable}>
+      <body>
+        <AstryxProvider>
+          <PostHogProvider>
+            <QueryClientWrapper>{children}</QueryClientWrapper>
+          </PostHogProvider>
+        </AstryxProvider>
       </body>
     </html>
   );

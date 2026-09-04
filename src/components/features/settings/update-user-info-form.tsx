@@ -1,16 +1,19 @@
 'use client';
 
+import { Button } from '@astryxdesign/core/Button';
+import { FormLayout } from '@astryxdesign/core/FormLayout';
+import { HStack } from '@astryxdesign/core/HStack';
+import { TextInput } from '@astryxdesign/core/TextInput';
+import { useToast } from '@astryxdesign/core/Toast';
+import { VStack } from '@astryxdesign/core/VStack';
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { User } from 'better-auth';
 import { useForm } from 'react-hook-form';
-import { toast } from 'sonner';
 
-import { Button } from '@/element/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/element/card';
-import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/element/field';
-import { Input } from '@/element/input';
-import RequiredMark from '@/element/required-mark';
+import FormCard from '@/layout/form-card';
+
+import TextField from '@/element/text-field';
 
 import useGetUser, { USER_QUERY_KEY } from '@/hook/data/use-user';
 
@@ -27,58 +30,44 @@ const getDefaultValues = (user?: User): UpdateUserInfoSchemaType => ({
 const UpdateUserInfoForm = () => {
   const { data: user } = useGetUser();
   const queryClient = useQueryClient();
+  const showToast = useToast();
 
-  const {
-    handleSubmit,
-    register,
-    formState: { errors },
-  } = useForm<UpdateUserInfoSchemaType>({
+  const { control, handleSubmit } = useForm<UpdateUserInfoSchemaType>({
     resolver: standardSchemaResolver(UpdateUserInfoSchema),
     defaultValues: getDefaultValues(user),
   });
 
   const { isPending, mutateAsync } = useMutation({
     mutationFn: async (values: UpdateUserInfoSchemaType) => await unwrapServerAction(updateUserInfo(values)),
-    onError: (err) => toast.error(getErrorMessage(err)),
+    onError: (err) => showToast({ type: 'error', body: getErrorMessage(err) }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: USER_QUERY_KEY });
-      toast.success('Vos informations ont été mises à jour.');
+      showToast({ body: 'Vos informations ont été mises à jour.' });
     },
   });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Informations personnelles</CardTitle>
-        <CardDescription>Mettez à jour vos informations personnelles.</CardDescription>
-      </CardHeader>
+    <FormCard title="Informations personnelles" description="Mettez à jour vos informations personnelles.">
+      <form onSubmit={handleSubmit((values) => mutateAsync(values))} noValidate>
+        <VStack gap={4}>
+          <FormLayout>
+            {/* Outside the form: the address is shown for context, not edited. */}
+            <TextInput
+              label="Email"
+              description="L'adresse email ne peut pas être modifiée."
+              value={user?.email ?? ''}
+              isReadOnly
+            />
 
-      <CardContent>
-        <form onSubmit={handleSubmit((values) => mutateAsync(values))}>
-          <FieldGroup>
-            <Field>
-              <FieldLabel htmlFor="email">Email</FieldLabel>
-              <Input id="email" value={user?.email ?? ''} disabled />
-              <FieldDescription>L'adresse email ne peut pas être modifiée.</FieldDescription>
-            </Field>
+            <TextField control={control} name="name" label="Nom" isRequired />
+          </FormLayout>
 
-            <Field data-invalid={!!errors.name}>
-              <FieldLabel htmlFor="name">
-                Nom <RequiredMark />
-              </FieldLabel>
-              <Input id="name" {...register('name')} required aria-invalid={!!errors.name} />
-              {!!errors.name && <FieldError errors={[errors.name]} />}
-            </Field>
-
-            <Field>
-              <Button type="submit" isLoading={isPending}>
-                Enregistrer
-              </Button>
-            </Field>
-          </FieldGroup>
-        </form>
-      </CardContent>
-    </Card>
+          <HStack justify="start">
+            <Button type="submit" label="Enregistrer" isLoading={isPending} />
+          </HStack>
+        </VStack>
+      </form>
+    </FormCard>
   );
 };
 

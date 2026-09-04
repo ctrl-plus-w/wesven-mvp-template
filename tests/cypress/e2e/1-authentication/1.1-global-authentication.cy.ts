@@ -37,7 +37,7 @@ describe('1.1 Global Authentication (Dashboard)', () => {
         cy.get('input[name="confirmPassword"]').type('password123');
         cy.get('button[type="submit"]').click();
 
-        cy.get('[data-sonner-toast]').should('be.visible');
+        cy.get('[data-toast-id]').should('be.visible');
         cy.url().should('include', '/register');
       });
 

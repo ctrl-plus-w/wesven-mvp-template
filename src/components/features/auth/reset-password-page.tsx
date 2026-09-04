@@ -1,18 +1,20 @@
 'use client';
 
-import Link from 'next/link';
+import NextLink from 'next/link';
 import { useRouter } from 'next/navigation';
 
+import { Button } from '@astryxdesign/core/Button';
+import { FormLayout } from '@astryxdesign/core/FormLayout';
+import { Link } from '@astryxdesign/core/Link';
+import { useToast } from '@astryxdesign/core/Toast';
+import { VStack } from '@astryxdesign/core/VStack';
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
-import { toast } from 'sonner';
 
-import { Button } from '@/element/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/element/card';
-import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/element/field';
-import { Input } from '@/element/input';
-import RequiredMark from '@/element/required-mark';
+import AuthCard from '@/layout/auth-card';
+
+import TextField from '@/element/text-field';
 
 import { ResetPasswordSchema, type ResetPasswordSchemaType } from '@/util/schemas/auth';
 import { unwrapServerAction } from '@/util/server';
@@ -31,66 +33,49 @@ const getDefaultValues = (): ResetPasswordSchemaType => ({
 
 const ResetPasswordPage = ({ token }: ResetPasswordPageProps) => {
   const router = useRouter();
+  const showToast = useToast();
 
-  const {
-    handleSubmit,
-    register,
-    formState: { errors },
-  } = useForm<ResetPasswordSchemaType>({
+  const { control, handleSubmit } = useForm<ResetPasswordSchemaType>({
     resolver: standardSchemaResolver(ResetPasswordSchema),
     defaultValues: getDefaultValues(),
   });
 
   const { isPending, mutateAsync } = useMutation({
     mutationFn: async (values: ResetPasswordSchemaType) => unwrapServerAction(resetPassword(token, values)),
-    onError: (err) => toast.error(getErrorMessage(err)),
+    onError: (err) => showToast({ type: 'error', body: getErrorMessage(err) }),
     onSuccess: () => router.push('/'),
   });
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader>
-        <CardTitle>Mot de passe perdu</CardTitle>
-        <CardDescription>Entrez votre nouveau mot de passe ci-dessous pour le réinitialiser.</CardDescription>
-      </CardHeader>
+    <AuthCard
+      title="Mot de passe perdu"
+      description="Entrez votre nouveau mot de passe ci-dessous pour le réinitialiser."
+      footer={
+        <>
+          Vous avez déjà un compte ?{' '}
+          <Link as={NextLink} href="/login">
+            Se connecter
+          </Link>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit((values) => mutateAsync(values))} noValidate>
+        <VStack gap={4}>
+          <FormLayout>
+            <TextField control={control} name="password" type="password" label="Mot de passe" isRequired />
+            <TextField
+              control={control}
+              name="confirmPassword"
+              type="password"
+              label="Confirmer le mot de passe"
+              isRequired
+            />
+          </FormLayout>
 
-      <CardContent>
-        <form onSubmit={handleSubmit((values) => mutateAsync(values))}>
-          <FieldGroup>
-            <Field data-invalid={!!errors.password}>
-              <FieldLabel htmlFor="password">
-                Mot de passe <RequiredMark />
-              </FieldLabel>
-              <Input id="password" {...register('password')} required aria-invalid={!!errors.password} />
-              {!!errors.password && <FieldError errors={[errors.password]} />}
-            </Field>
-
-            <Field data-invalid={!!errors.confirmPassword}>
-              <FieldLabel htmlFor="confirmPassword">
-                Confirmer le mot de passe <RequiredMark />
-              </FieldLabel>
-              <Input
-                id="confirmPassword"
-                {...register('confirmPassword')}
-                required
-                aria-invalid={!!errors.confirmPassword}
-              />
-              {!!errors.confirmPassword && <FieldError errors={[errors.confirmPassword]} />}
-            </Field>
-
-            <Field>
-              <Button type="submit" isLoading={isPending}>
-                Réinitialiser le mot de passe
-              </Button>
-
-              <FieldDescription className="text-center">
-                Vous avez déjà un compte ? <Link href="/login">Se connecter</Link>
-              </FieldDescription>
-            </Field>
-          </FieldGroup>
-        </form>
-      </CardContent>
-    </Card>
+          <Button type="submit" label="Réinitialiser le mot de passe" isLoading={isPending} width="100%" />
+        </VStack>
+      </form>
+    </AuthCard>
   );
 };
 
