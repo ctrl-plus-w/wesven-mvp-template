@@ -3,8 +3,8 @@ import { z } from '@/instance/zod';
 const EnvPublicSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.url(),
 
-  NEXT_PUBLIC_POSTHOG_KEY: z.string(),
-  NEXT_PUBLIC_POSTHOG_HOST: z.string(),
+  NEXT_PUBLIC_POSTHOG_KEY: z.string().min(1),
+  NEXT_PUBLIC_POSTHOG_HOST: z.url(),
 });
 
 const ENV_PUBLIC = EnvPublicSchema.parse({
