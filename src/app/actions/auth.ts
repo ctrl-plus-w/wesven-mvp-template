@@ -2,8 +2,11 @@
 
 import { headers } from 'next/headers';
 
+import { APIError } from 'better-auth';
+
 import auth from '@/instance/auth/server';
 
+import { assertResetMailAllowed, throttledSignIn } from '@/util/auth-throttle.server';
 import {
   DeleteAccountSchema,
   type DeleteAccountSchemaType,
@@ -24,10 +27,16 @@ import { createServerAction, UnauthorizedServerActionError } from '@/util/server
 
 import ENV_PUBLIC from '@/env.public';
 
+const isWrongPassword = (error: unknown) =>
+  error instanceof APIError && error.body?.code === 'INVALID_EMAIL_OR_PASSWORD';
+
 export const login = createServerAction('login', async (values: LoginSchemaType) => {
   const { email, password } = LoginSchema.parse(values);
 
-  await auth.api.signInEmail({ body: { email, password } });
+  await throttledSignIn(email, {
+    signIn: () => auth.api.signInEmail({ body: { email, password } }),
+    isWrongPassword,
+  });
 });
 
 export const register = createServerAction('register', async (values: RegisterSchemaType) => {
@@ -40,6 +49,7 @@ export const requestResetPassword = createServerAction(
   'requestResetPassword',
   async (values: RequestResetPasswordSchemaType) => {
     const { email } = RequestResetPasswordSchema.parse(values);
+    await assertResetMailAllowed(email);
 
     const redirectTo = `${ENV_PUBLIC.NEXT_PUBLIC_APP_URL}/reset-password`;
 

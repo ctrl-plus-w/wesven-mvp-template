@@ -12,8 +12,14 @@ import ENV from '@/env';
 import * as schema from '@/schemas';
 
 const auth = betterAuth({
+  // These run through the server actions in `@/action/auth`, which throttle them per email. Their HTTP routes would
+  // be a way around that throttle, so they answer 404.
+  disabledPaths: ['/sign-up/email', '/sign-in/email', '/request-password-reset'],
+
   emailAndPassword: {
     enabled: true,
+    // A reset link is how a stolen account is recovered: it must end the thief's sessions too.
+    revokeSessionsOnPasswordReset: true,
 
     sendResetPassword: async ({ user, url }) => {
       const urlObject = new URL(url);
@@ -48,6 +54,8 @@ const auth = betterAuth({
 
   advanced: {
     cookiePrefix: AUTH_CONFIG.cookie_prefix,
+    // Vercel sets `x-forwarded-for` to the client's address; behind Cloudflare, put `cf-connecting-ip` first.
+    ipAddress: { ipAddressHeaders: ['x-forwarded-for'] },
     database: { generateId: false },
   },
 });

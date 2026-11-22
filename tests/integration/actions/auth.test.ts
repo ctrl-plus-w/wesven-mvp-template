@@ -23,7 +23,12 @@ vi.mock('@/env.public', () => ({
   default: { NEXT_PUBLIC_APP_URL: 'https://test.example.com' },
 }));
 
+import { verification } from '@/schema/auth';
+
 import auth from '@/instance/auth/server';
+import { db } from '@/instance/drizzle';
+
+import { RESET_MAIL_LIMIT, SIGN_IN_FAILURE_LIMIT } from '@/util/auth-throttle.server';
 
 import {
   deleteAccount,
@@ -82,6 +87,55 @@ describe('Auth Server Actions', () => {
       await expect(unwrapServerAction(login({ email: 'user@example.com', password: 'wrongpass' }))).rejects.toThrow(
         ServerActionError,
       );
+    });
+  });
+
+  describe('Login throttle', () => {
+    const wrongPassword = () =>
+      new APIError('UNAUTHORIZED', { code: 'INVALID_EMAIL_OR_PASSWORD', message: 'Invalid email or password' });
+
+    const failLogin = (email = 'user@example.com') => login({ email, password: 'wrongpass' });
+
+    it(`locks an email after ${SIGN_IN_FAILURE_LIMIT} wrong passwords, before checking the next one`, async () => {
+      authApi.signInEmail.mockRejectedValue(wrongPassword());
+      for (let attempt = 0; attempt < SIGN_IN_FAILURE_LIMIT; attempt++) await failLogin();
+      authApi.signInEmail.mockClear();
+
+      const result = await failLogin();
+
+      expect(result).toMatchObject({ success: false, error: { code: 'auth.sign-in-locked' } });
+      expect(authApi.signInEmail).not.toHaveBeenCalled();
+    });
+
+    it('counts the email case-insensitively and leaves other emails alone', async () => {
+      authApi.signInEmail.mockRejectedValue(wrongPassword());
+      for (let attempt = 0; attempt < SIGN_IN_FAILURE_LIMIT; attempt++) await failLogin('User@Example.com');
+
+      expect(await failLogin('user@example.com')).toMatchObject({ error: { code: 'auth.sign-in-locked' } });
+      expect(await failLogin('other@example.com')).toMatchObject({ error: { code: 'auth' } });
+    });
+
+    it('never counts a successful sign-in or a failure that is not a wrong password', async () => {
+      authApi.signInEmail.mockResolvedValue(undefined);
+      for (let attempt = 0; attempt < SIGN_IN_FAILURE_LIMIT; attempt++)
+        await unwrapServerAction(login({ email: 'user@example.com', password: 'securepass' }));
+
+      authApi.signInEmail.mockRejectedValue(new APIError('FORBIDDEN', { code: 'BANNED_USER', message: 'Banned' }));
+      for (let attempt = 0; attempt < SIGN_IN_FAILURE_LIMIT; attempt++) await failLogin();
+
+      authApi.signInEmail.mockResolvedValue(undefined);
+      await expect(unwrapServerAction(login({ email: 'user@example.com', password: 'securepass' }))).resolves.toBe(
+        undefined,
+      );
+    });
+
+    it('keeps the database free of the email address', async () => {
+      authApi.signInEmail.mockRejectedValue(wrongPassword());
+      await failLogin('secret@example.com');
+
+      const rows = await db.select().from(verification);
+      expect(rows).toHaveLength(1);
+      expect(JSON.stringify(rows)).not.toContain('secret');
     });
   });
 
@@ -146,6 +200,18 @@ describe('Auth Server Actions', () => {
 
     it('rejects with invalid email', async () => {
       await expect(unwrapServerAction(requestResetPassword({ email: 'not-an-email' }))).rejects.toThrow();
+    });
+
+    it(`refuses a reset mail beyond ${RESET_MAIL_LIMIT} per hour for one email`, async () => {
+      authApi.requestPasswordReset.mockResolvedValue(undefined);
+      for (let request = 0; request < RESET_MAIL_LIMIT; request++)
+        await unwrapServerAction(requestResetPassword({ email: 'user@example.com' }));
+      authApi.requestPasswordReset.mockClear();
+
+      const result = await requestResetPassword({ email: 'user@example.com' });
+
+      expect(result).toMatchObject({ success: false, error: { code: 'auth.reset-mail-limit' } });
+      expect(authApi.requestPasswordReset).not.toHaveBeenCalled();
     });
   });
 
