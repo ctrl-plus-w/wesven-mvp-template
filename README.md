@@ -21,7 +21,7 @@ A production-ready Next.js starter template with authentication, database, and t
 ### Prerequisites
 
 - Node.js >= 22.13 (see `.nvmrc`; the Astryx CLI enforces this floor)
-- pnpm 8
+- pnpm 10.26+ (pinned through `packageManager`; `corepack enable` picks it up)
 - Docker
 
 ### Setup
@@ -147,6 +147,7 @@ This template deploys via **GitHub Actions running the Vercel CLI** to **Vercel 
    | `RESEND_API_KEY`           | from Resend dashboard                                  |
    | `NEXT_PUBLIC_POSTHOG_KEY`  | from PostHog project settings                          |
    | `NEXT_PUBLIC_POSTHOG_HOST` | `https://us.i.posthog.com` (or your region)            |
+   | `CRON_SECRET`              | optional, `openssl rand -base64 32` — see cron routes  |
 
 5. **Link the project locally** to grab the Vercel org and project IDs:
 
@@ -173,4 +174,13 @@ This template deploys via **GitHub Actions running the Vercel CLI** to **Vercel 
 
    The `migrate` and `deploy` jobs are gated on this variable, so without it CI runs lint + tests only.
 
-8. **Push to `main`.** CI runs `lint` → `unit-tests` + `integration-tests` + `e2e-tests` (parallel) → `migrate` → `deploy`. The first green run publishes the app.
+   Optional, for readable production stack traces and deploy markers in PostHog:
+   - Variables `POSTHOG_PROJECT_ID` (the numeric id in your PostHog project URL) and `POSTHOG_APP_HOST`
+     (`https://us.posthog.com` by default, `https://eu.posthog.com` for EU).
+   - Secret `POSTHOG_SOURCEMAPS_API_KEY` — a personal API key with `error_tracking:write` (and `annotation:write`
+     to also mark deploys; or set a separate `POSTHOG_ANNOTATIONS_API_KEY`). With it, the deploy job builds browser
+     source maps, uploads them to PostHog, and deletes them before the output ships.
+
+8. **Push to `main`.** CI runs `lint` (install, `pnpm audit --prod --audit-level=critical`, Biome, `tsc`) → `unit-tests` + `integration-tests` + `e2e-tests` (parallel) → `migrate` → `deploy`. The first green run publishes the app.
+
+   `BETTER_AUTH_SECRET` must be at least 32 characters in the `ci-cd` environment too, or the test jobs fail at startup.

@@ -12,8 +12,9 @@ concurrency:
 
 jobs:
   lint:
-    name: Lint & Format with Biome
+    name: Lint, Type Check & Audit
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
     steps:
@@ -22,17 +23,38 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Fails on a critical advisory in a shipped dependency. Reviewed, unreachable advisories are listed under
+      # `auditConfig.ignoreGhsas` in pnpm-workspace.yaml.
+      - name: Audit production dependencies
+        run: pnpm audit --prod --audit-level=critical
+
       - name: Setup Biome
         uses: biomejs/setup-biome@v2
         with:
-          version: 2.3.12
+          version: 2.3.14
 
       - name: Run Biome
         run: biome ci . --diagnostic-level=warn
 
+      - name: Type check
+        run: pnpm exec tsc --noEmit
+
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: lint
     environment: ci-cd
     env:
@@ -58,10 +80,7 @@ jobs:
           cache: "pnpm"
 
       - name: Install dependencies
-        run: pnpm install
-
-      - name: Type check
-        run: pnpm exec tsc --noEmit
+        run: pnpm install --frozen-lockfile
 
       - name: Run unit tests
         run: pnpm test:unit
@@ -69,6 +88,7 @@ jobs:
   integration-tests:
     name: Integration Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     needs: lint
     environment: ci-cd
     env:
@@ -94,7 +114,7 @@ jobs:
           cache: "pnpm"
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Run integration tests
         run: pnpm test:integration
@@ -102,6 +122,7 @@ jobs:
   e2e-tests:
     name: E2E Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: lint
     environment: ci-cd
     env:
@@ -127,7 +148,7 @@ jobs:
           cache: "pnpm"
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Cache Cypress binary
         id: cypress-cache
@@ -158,6 +179,11 @@ jobs:
     name: Run Database Migrations
     needs: [unit-tests, integration-tests, e2e-tests]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # One production change at a time, and never cancelled halfway: a newer push waits for this one to finish.
+    concurrency:
+      group: production-migrate
+      cancel-in-progress: false
     if: vars.DEPLOYMENT_ENABLED == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment: ci-cd
     env:
@@ -182,7 +208,7 @@ jobs:
           cache: "pnpm"
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Run Drizzle migrations
         run: pnpm db:migrate
@@ -191,11 +217,18 @@ jobs:
     name: Deploy to Vercel
     needs: [migrate]
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     if: vars.DEPLOYMENT_ENABLED == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment: ci-cd
+    concurrency:
+      group: production-deploy
+      cancel-in-progress: false
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      # The PostHog app (not ingestion) host and the numeric project id, for source maps and deploy annotations.
+      POSTHOG_APP_HOST: ${{ vars.POSTHOG_APP_HOST || 'https://us.posthog.com' }}
+      POSTHOG_PROJECT_ID: ${{ vars.POSTHOG_PROJECT_ID }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -209,14 +242,73 @@ jobs:
           node-version-file: ".nvmrc"
           cache: "pnpm"
 
+      # Pinned: `@latest` would let a CLI release change how production is built between two identical pushes.
       - name: Install Vercel CLI
-        run: npm install --global vercel@latest
+        run: npm install --global vercel@65.11.0
 
       - name: Pull Vercel environment information
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
+      # Browser source maps are built only when CI can upload them to PostHog: until the POSTHOG_SOURCEMAPS_API_KEY
+      # secret and the POSTHOG_PROJECT_ID variable exist, the build is exactly what it was. The key stays in this step
+      # and the upload step, so neither the build nor the running app can read it.
+      - name: Check for the PostHog source-map key
+        id: sourcemaps
+        env:
+          POSTHOG_SOURCEMAPS_API_KEY: ${{ secrets.POSTHOG_SOURCEMAPS_API_KEY }}
+        run: if [ -n "$POSTHOG_SOURCEMAPS_API_KEY" ] && [ -n "$POSTHOG_PROJECT_ID" ]; then echo "enabled=true" >> "$GITHUB_OUTPUT"; fi
+
       - name: Build project artifacts
+        env:
+          BROWSER_SOURCE_MAPS: ${{ steps.sourcemaps.outputs.enabled }}
         run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      # The CLI writes a chunk id into each browser chunk of the prebuilt output and uploads its map under this commit,
+      # so a production stack frame resolves to the original file and line. A failed upload (bad key, PostHog outage)
+      # only leaves those frames minified, so it never holds back the deploy.
+      - name: Upload browser source maps to PostHog
+        if: steps.sourcemaps.outputs.enabled == 'true'
+        continue-on-error: true
+        uses: PostHog/upload-source-maps@v2.0.0
+        with:
+          directory: .vercel/output/static/_next/static
+          project-id: ${{ env.POSTHOG_PROJECT_ID }}
+          api-key: ${{ secrets.POSTHOG_SOURCEMAPS_API_KEY }}
+          host: ${{ env.POSTHOG_APP_HOST }}
+          release-version: ${{ github.sha }}
+          cli-version: 0.18.9
+
+      # The prebuilt output is served as-is: a map left in it would publish the source.
+      - name: Drop the browser source maps from the output
+        run: find .vercel/output/static -name '*.map' -delete
+
+      - name: Assert no source map reached the output
+        run: |
+          maps=$(find .vercel/output/static -name '*.map' | head -5)
+          if [ -n "$maps" ]; then echo "::error::source map in the deployed output: $maps"; exit 1; fi
 
       - name: Deploy project artifacts to Vercel
         run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      # Marks the deploy on every PostHog chart (short sha + commit subject), so a jump in a line can be read against
+      # what shipped. The key needs `annotation:write`; with no dedicated key it falls back to the source-map key. A
+      # failed, slow or skipped marker never fails the deploy.
+      - name: Mark the deploy on PostHog charts
+        continue-on-error: true
+        timeout-minutes: 2
+        env:
+          POSTHOG_API_KEY: ${{ secrets.POSTHOG_ANNOTATIONS_API_KEY || secrets.POSTHOG_SOURCEMAPS_API_KEY }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          set -euo pipefail
+          if [ -z "$POSTHOG_API_KEY" ] || [ -z "$POSTHOG_PROJECT_ID" ]; then echo "No PostHog key or project id; skipping."; exit 0; fi
+
+          subject="${COMMIT_MESSAGE%%$'\n'*}"
+          subject="${subject:-manual run by $GITHUB_ACTOR}"
+          content="$(printf 'Deploy %s: %s' "${GITHUB_SHA:0:9}" "$subject" | cut -c1-400)"
+          curl -fsS --connect-timeout 10 --max-time 20 -X POST "$POSTHOG_APP_HOST/api/projects/$POSTHOG_PROJECT_ID/annotations/" \
+            -H "Authorization: Bearer $POSTHOG_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "$(jq -n --arg content "$content" --arg at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+                  '{content:$content, date_marker:$at, scope:"project"}')" > /dev/null
+          echo "Marked: $content"
