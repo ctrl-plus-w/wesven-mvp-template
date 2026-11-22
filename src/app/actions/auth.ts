@@ -24,48 +24,49 @@ import { createServerAction, UnauthorizedServerActionError } from '@/util/server
 
 import ENV_PUBLIC from '@/env.public';
 
-export const login = createServerAction(async (values: LoginSchemaType) => {
+export const login = createServerAction('login', async (values: LoginSchemaType) => {
   const { email, password } = LoginSchema.parse(values);
 
-  await auth.api.signInEmail({
-    body: {
-      email: email,
-      password: password,
-    },
-  });
+  await auth.api.signInEmail({ body: { email, password } });
 });
 
-export const register = createServerAction(async (values: RegisterSchemaType) => {
+export const register = createServerAction('register', async (values: RegisterSchemaType) => {
   const { name, email, password } = RegisterSchema.parse(values);
 
   await auth.api.signUpEmail({ body: { name, email, password } });
 });
 
-export const requestResetPassword = createServerAction(async (values: RequestResetPasswordSchemaType) => {
-  const { email } = RequestResetPasswordSchema.parse(values);
+export const requestResetPassword = createServerAction(
+  'requestResetPassword',
+  async (values: RequestResetPasswordSchemaType) => {
+    const { email } = RequestResetPasswordSchema.parse(values);
 
-  const redirectTo = `${ENV_PUBLIC.NEXT_PUBLIC_APP_URL}/reset-password`;
+    const redirectTo = `${ENV_PUBLIC.NEXT_PUBLIC_APP_URL}/reset-password`;
 
-  await auth.api.requestPasswordReset({ body: { email, redirectTo } });
-});
+    await auth.api.requestPasswordReset({ body: { email, redirectTo } });
+  },
+);
 
-export const resetPassword = createServerAction(async (token: string, values: ResetPasswordSchemaType) => {
-  const { password } = ResetPasswordSchema.parse(values);
+export const resetPassword = createServerAction(
+  'resetPassword',
+  async (token: string, values: ResetPasswordSchemaType) => {
+    const { password } = ResetPasswordSchema.parse(values);
 
-  await auth.api.resetPassword({ body: { newPassword: password, token } });
-});
+    await auth.api.resetPassword({ body: { newPassword: password, token } });
+  },
+);
 
-export const logout = createServerAction(async () => {
+export const logout = createServerAction('logout', async () => {
   await auth.api.signOut({ headers: await headers() });
 });
 
-export const deleteAccount = createServerAction(async (values: DeleteAccountSchemaType) => {
+export const deleteAccount = createServerAction('deleteAccount', async (values: DeleteAccountSchemaType) => {
   const { password } = DeleteAccountSchema.parse(values);
 
   await auth.api.deleteUser({ headers: await headers(), body: { password } });
 });
 
-export const updateUserInfo = createServerAction(async (values: UpdateUserInfoSchemaType) => {
+export const updateUserInfo = createServerAction('updateUserInfo', async (values: UpdateUserInfoSchemaType) => {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) throw new UnauthorizedServerActionError();
 
@@ -74,7 +75,7 @@ export const updateUserInfo = createServerAction(async (values: UpdateUserInfoSc
   await auth.api.updateUser({ body: { name }, headers: await headers() });
 });
 
-export const updatePassword = createServerAction(async (values: UpdatePasswordSchemaType) => {
+export const updatePassword = createServerAction('updatePassword', async (values: UpdatePasswordSchemaType) => {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) throw new UnauthorizedServerActionError();
 

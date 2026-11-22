@@ -129,6 +129,8 @@ This category covers conventions related to data fetching, server-side rendering
    3. If a mutation hook is created. Put all the possible logic in it
 5. In server actions, if the action involves using an id alone, do not pass the entire object. Instead, only pass the id to optimize performance (and verify that the id is a uuid with zod).
 6. When a specific type is needed to be related to a database entity (e.g a user with its products), create this type in the `types/db.ts` file. Always be precise and generic with the naming of these types (e.g UserWithProducts).
+7. Create server actions with `createServerAction('actionName', async (...) => ...)` from `@/util/server`. The name appears in logs and error reports. For an expected refusal, throw `new ServerActionError({ code })` or one of its subclasses (codes and their French messages live in `ERRORS.SERVER`, `src/constants/errors.ts`). Zod, Better Auth and Postgres constraint errors (unique, foreign key, too long) are mapped to coded failures automatically. Anything else reaches the client only as `unexpected`, and is logged and reported to PostHog. `redirect()` and `notFound()` still propagate.
+8. Server-only helpers that must never reach a client bundle (crypto, the database) take the `.server.ts` suffix, as browser-safe ones take `.client.ts`.
 
 ## General code conventions
 
