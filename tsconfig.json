@@ -14,7 +14,7 @@
     "moduleDetection": "force",
     "verbatimModuleSyntax": true,
     "isolatedModules": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "incremental": true,
     "paths": {
       "@/*": ["./src/*"],
@@ -32,6 +32,7 @@
       "@/instance/*": ["./src/instances/*"],
       "@/util/*": ["./src/utils/*"],
       "@/constant/*": ["./src/constants/*"],
+      "@/action/*": ["./src/app/actions/*"],
       "@/fixture/*": ["./tests/fixtures/*"],
       "@/seed/*": ["./tests/seeds/*"],
       "@/e2e-support/*": ["./tests/cypress/support/*"],
@@ -56,7 +57,10 @@
     "**/*.tsx",
     "**/*.cjs",
     "**/*.js",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts",
+    ".next-test/types/**/*.ts",
+    ".next-test/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", ".next", ".next-test"]
 }
