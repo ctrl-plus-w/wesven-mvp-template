@@ -37,7 +37,7 @@ const UpdateUserInfoForm = () => {
     defaultValues: getDefaultValues(user),
   });
 
-  const { isPending, mutateAsync } = useMutation({
+  const { isPending, mutate } = useMutation({
     mutationFn: async (values: UpdateUserInfoSchemaType) => await unwrapServerAction(updateUserInfo(values)),
     onError: (err) => showToast({ type: 'error', body: getErrorMessage(err) }),
     onSuccess: async () => {
@@ -48,7 +48,7 @@ const UpdateUserInfoForm = () => {
 
   return (
     <FormCard title="Informations personnelles" description="Mettez à jour vos informations personnelles.">
-      <form onSubmit={handleSubmit((values) => mutateAsync(values))} noValidate>
+      <form onSubmit={handleSubmit((values) => mutate(values))} noValidate>
         <VStack gap={4}>
           <FormLayout>
             {/* Outside the form: the address is shown for context, not edited. */}

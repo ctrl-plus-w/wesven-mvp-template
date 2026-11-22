@@ -33,7 +33,7 @@ const UpdatePasswordForm = () => {
     defaultValues: getDefaultValues(),
   });
 
-  const { isPending, mutateAsync } = useMutation({
+  const { isPending, mutate } = useMutation({
     mutationFn: async (values: UpdatePasswordSchemaType) => await unwrapServerAction(updatePassword(values)),
     onError: (err) => showToast({ type: 'error', body: getErrorMessage(err) }),
     onSuccess: () => {
@@ -44,7 +44,7 @@ const UpdatePasswordForm = () => {
 
   return (
     <FormCard title="Modifier le mot de passe" description="Mettez à jour votre mot de passe.">
-      <form onSubmit={handleSubmit((values) => mutateAsync(values))} noValidate>
+      <form onSubmit={handleSubmit((values) => mutate(values))} noValidate>
         <VStack gap={4}>
           <FormLayout>
             <TextField control={control} name="password" type="password" label="Mot de passe actuel" isRequired />

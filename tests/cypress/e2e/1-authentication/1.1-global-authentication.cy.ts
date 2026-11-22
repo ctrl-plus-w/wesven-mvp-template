@@ -27,9 +27,6 @@ describe('1.1 Global Authentication (Dashboard)', () => {
       });
 
       it('should show error when registering with existing email', () => {
-        // catch next.js (better auth) errors
-        cy.on('uncaught:exception', (err) => !err.message.includes('User already exists'));
-
         cy.visit('/register');
         cy.get('input[name="name"]').type('Another User');
         cy.get('input[name="email"]').type(user.email); // Use same email as user1
@@ -37,7 +34,7 @@ describe('1.1 Global Authentication (Dashboard)', () => {
         cy.get('input[name="confirmPassword"]').type('password123');
         cy.get('button[type="submit"]').click();
 
-        cy.get('[data-toast-id]').should('be.visible');
+        cy.get('[data-toast-id]').should('be.visible').and('contain.text', 'Cet email est déjà utilisé');
         cy.url().should('include', '/register');
       });
 

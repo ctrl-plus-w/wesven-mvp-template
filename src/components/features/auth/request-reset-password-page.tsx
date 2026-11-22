@@ -33,7 +33,7 @@ const RequestResetPasswordPage = () => {
     defaultValues: getDefaultValues(),
   });
 
-  const { isPending, mutateAsync } = useMutation({
+  const { isPending, mutate } = useMutation({
     mutationFn: async (values: RequestResetPasswordSchemaType) =>
       await unwrapServerAction(requestResetPassword(values)),
     onError: (err) => showToast({ type: 'error', body: getErrorMessage(err) }),
@@ -58,7 +58,7 @@ const RequestResetPasswordPage = () => {
         </>
       }
     >
-      <form onSubmit={handleSubmit((values) => mutateAsync(values))} noValidate>
+      <form onSubmit={handleSubmit((values) => mutate(values))} noValidate>
         <VStack gap={4}>
           <FormLayout>
             <TextField control={control} name="email" type="email" label="Email" isRequired />

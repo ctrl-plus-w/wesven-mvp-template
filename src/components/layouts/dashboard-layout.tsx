@@ -45,7 +45,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
   const { data: user } = useGetUser();
 
-  const { isPending, mutateAsync: logoutMutate } = useMutation({
+  const { isPending, mutate: logoutMutate } = useMutation({
     mutationFn: async () => await unwrapServerAction(logout()),
     onError: (err) => showToast({ type: 'error', body: getErrorMessage(err) }),
     onSuccess: () => router.push('/login'),

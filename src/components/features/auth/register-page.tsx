@@ -38,7 +38,7 @@ const RegisterPage = () => {
     defaultValues: getDefaultValues(),
   });
 
-  const { isPending, mutateAsync } = useMutation({
+  const { isPending, mutate } = useMutation({
     mutationFn: async (values: RegisterSchemaType) => await unwrapServerAction(registerAction(values)),
     onError: (err) => showToast({ type: 'error', body: getErrorMessage(err) }),
     onSuccess: () => router.push('/dashboard'),
@@ -57,7 +57,7 @@ const RegisterPage = () => {
         </>
       }
     >
-      <form onSubmit={handleSubmit((values) => mutateAsync(values))} noValidate>
+      <form onSubmit={handleSubmit((values) => mutate(values))} noValidate>
         <VStack gap={4}>
           <FormLayout>
             <TextField control={control} name="name" label="Nom complet" isRequired />

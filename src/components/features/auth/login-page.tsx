@@ -37,7 +37,7 @@ const LoginPage = () => {
     defaultValues: getDefaultValues(),
   });
 
-  const { isPending, mutateAsync } = useMutation({
+  const { isPending, mutate } = useMutation({
     mutationFn: async (values: LoginSchemaType) => await unwrapServerAction(login(values)),
     onError: (err) => showToast({ type: 'error', body: getErrorMessage(err) }),
     onSuccess: () => router.push('/dashboard'),
@@ -56,7 +56,7 @@ const LoginPage = () => {
         </>
       }
     >
-      <form onSubmit={handleSubmit((values) => mutateAsync(values))} noValidate>
+      <form onSubmit={handleSubmit((values) => mutate(values))} noValidate>
         <VStack gap={4}>
           <FormLayout>
             <TextField control={control} name="email" type="email" label="Email" isRequired />

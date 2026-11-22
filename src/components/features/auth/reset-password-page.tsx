@@ -40,7 +40,7 @@ const ResetPasswordPage = ({ token }: ResetPasswordPageProps) => {
     defaultValues: getDefaultValues(),
   });
 
-  const { isPending, mutateAsync } = useMutation({
+  const { isPending, mutate } = useMutation({
     mutationFn: async (values: ResetPasswordSchemaType) => unwrapServerAction(resetPassword(token, values)),
     onError: (err) => showToast({ type: 'error', body: getErrorMessage(err) }),
     onSuccess: () => router.push('/'),
@@ -59,7 +59,7 @@ const ResetPasswordPage = ({ token }: ResetPasswordPageProps) => {
         </>
       }
     >
-      <form onSubmit={handleSubmit((values) => mutateAsync(values))} noValidate>
+      <form onSubmit={handleSubmit((values) => mutate(values))} noValidate>
         <VStack gap={4}>
           <FormLayout>
             <TextField control={control} name="password" type="password" label="Mot de passe" isRequired />
