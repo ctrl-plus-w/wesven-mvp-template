@@ -1,0 +1,41 @@
+verifyDepsBeforeRun: false
+
+# Only the packages set to `true` may run install scripts (preinstall/postinstall/prepare). A new dependency
+# that ships one has it skipped until it is reviewed and listed here. A git-hosted package is approved by the
+# exact tarball it resolves to, so bumping `@wesven/testing` means updating its commit hash here too.
+allowBuilds:
+  '@wesven/testing@https://codeload.github.com/ctrl-plus-w/wesven-testing/tar.gz/f79abb65316cdb413c728b9fdd1336d5ccfa9d32': true
+  cypress: true # downloads the Cypress binary
+  esbuild: true # installs the platform binary
+  sharp: true # falls back to a source build when no prebuilt libvips matches
+  # Reviewed and denied: they only print a message, or copy files this project does not use.
+  '@astryxdesign/cli': false
+  '@astryxdesign/core': false
+  core-js: false
+  msw: false
+  protobufjs: false
+
+# Patched versions of vulnerable transitive dependencies (`pnpm audit`). Drop an entry once the parent ships it.
+overrides:
+  # --- runtime (shipped to users) ---
+  '@vercel/blob>undici': ^6.29.1 # DoS, TLS certificate validation bypass
+  '@vercel/cli-config>zod': ^4.6.6 # @vercel/blob>@vercel/oidc pins 4.1.11 — memory exhaustion (GHSA-mrhx-c7xc-m3w5)
+  browserslist: ^4.28.7 # next>styled-jsx>@babel/core
+  protobufjs: ^7.6.1 # posthog-js OTLP transformer — RCE (GHSA-wcpc-wj8m-hjx6)
+  # --- dev/test-only toolchain (reached through better-auth's optional `vitest` peer) ---
+  form-data: ^4.0.6
+  nanoid: ^3.3.18
+  postcss: ^8.5.18
+  source-map-js: ^1.2.2
+  vite: ^7.3.7 # vitest 3.2 peer excludes 8
+  ws: ^8.21.0
+
+# Advisories reviewed and not reachable here; the CI gate (`pnpm audit --prod --audit-level=critical`) skips them.
+# Re-check on each better-auth / vitest upgrade and drop entries once the fixed version lands.
+auditConfig:
+  ignoreGhsas:
+    - GHSA-965c-763c-88jm # better-auth OAuth state as Magic Link — needs magicLink + social OAuth (email+password and admin only here). Fixed in 1.7.7.
+    - GHSA-r4xp-prcw-77qf # better-auth OAuth Proxy plugin — not used. Fixed in 1.7.7.
+    - GHSA-q84f-53jg-9ppm # better-auth device authorization plugin — not used. Fixed in 1.7.0.
+    - GHSA-5gmw-xhrv-c9v3 # tinypool — reached only as better-auth's optional `vitest` peer; test tooling, never bundled.
+    - GHSA-85c8-ppgw-ccpr # tinypool — same path as above.
