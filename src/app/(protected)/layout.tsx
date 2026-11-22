@@ -5,9 +5,9 @@ import type { ReactNode } from 'react';
 
 import Hydrate from '@/element/hydrate';
 
-import auth from '@/instance/auth/server';
+import { USER_QUERY_KEY } from '@/hook/data/use-user';
 
-import { USER_QUERY_KEY } from '@/hooks/data/use-user';
+import auth from '@/instance/auth/server';
 
 export const dynamic = 'force-dynamic';
 

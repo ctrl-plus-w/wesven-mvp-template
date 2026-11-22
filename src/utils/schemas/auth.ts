@@ -1,4 +1,4 @@
-import { z } from '@/instances/zod';
+import { z } from '@/instance/zod';
 
 export const PasswordSchema = z.string().min(8);
 

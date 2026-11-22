@@ -20,7 +20,7 @@ import { RegisterSchema, type RegisterSchemaType } from '@/util/schemas/auth';
 import { unwrapServerAction } from '@/util/server';
 import { getErrorMessage } from '@/util/string';
 
-import { register as registerAction } from '@/app/actions/auth';
+import { register as registerAction } from '@/action/auth';
 
 const getDefaultValues = (): RegisterSchemaType => ({
   name: '',

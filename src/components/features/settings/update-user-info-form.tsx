@@ -21,7 +21,7 @@ import { UpdateUserInfoSchema, type UpdateUserInfoSchemaType } from '@/util/sche
 import { unwrapServerAction } from '@/util/server';
 import { getErrorMessage } from '@/util/string';
 
-import { updateUserInfo } from '@/app/actions/auth';
+import { updateUserInfo } from '@/action/auth';
 
 const getDefaultValues = (user?: User): UpdateUserInfoSchemaType => ({
   name: user?.name ?? '',

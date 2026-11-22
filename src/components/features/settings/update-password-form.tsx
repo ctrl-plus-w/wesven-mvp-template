@@ -17,7 +17,7 @@ import { UpdatePasswordSchema, type UpdatePasswordSchemaType } from '@/util/sche
 import { unwrapServerAction } from '@/util/server';
 import { getErrorMessage } from '@/util/string';
 
-import { updatePassword } from '@/app/actions/auth';
+import { updatePassword } from '@/action/auth';
 
 const getDefaultValues = (): UpdatePasswordSchemaType => ({
   password: '',

@@ -19,7 +19,7 @@ import { RequestResetPasswordSchema, type RequestResetPasswordSchemaType } from 
 import { unwrapServerAction } from '@/util/server';
 import { getErrorMessage } from '@/util/string';
 
-import { requestResetPassword } from '@/app/actions/auth';
+import { requestResetPassword } from '@/action/auth';
 
 const getDefaultValues = (): RequestResetPasswordSchemaType => ({
   email: '',

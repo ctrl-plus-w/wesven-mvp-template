@@ -34,7 +34,7 @@ import {
   resetPassword,
   updatePassword,
   updateUserInfo,
-} from '@/app/actions/auth';
+} from '@/action/auth';
 import { createAuthSetup, type MockedAuth } from '@/test-util/auth';
 
 type MockedAuthApi = {

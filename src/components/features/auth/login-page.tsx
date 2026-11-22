@@ -21,7 +21,7 @@ import { LoginSchema, type LoginSchemaType } from '@/util/schemas/auth';
 import { unwrapServerAction } from '@/util/server';
 import { getErrorMessage } from '@/util/string';
 
-import { login } from '@/app/actions/auth';
+import { login } from '@/action/auth';
 
 const getDefaultValues = (): LoginSchemaType => ({
   email: '',

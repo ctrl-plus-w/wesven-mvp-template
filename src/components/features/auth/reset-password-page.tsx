@@ -20,7 +20,7 @@ import { ResetPasswordSchema, type ResetPasswordSchemaType } from '@/util/schema
 import { unwrapServerAction } from '@/util/server';
 import { getErrorMessage } from '@/util/string';
 
-import { resetPassword } from '@/app/actions/auth';
+import { resetPassword } from '@/action/auth';
 
 export interface ResetPasswordPageProps {
   token: string;

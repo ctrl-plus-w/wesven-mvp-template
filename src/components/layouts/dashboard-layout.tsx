@@ -23,7 +23,7 @@ import { getErrorMessage } from '@/util/string';
 
 import SIDEBAR from '@/constant/sidebar';
 
-import { logout } from '@/app/actions/auth';
+import { logout } from '@/action/auth';
 
 /**
  * `/dashboard` is the only exact match — every other entry owns its subtree,

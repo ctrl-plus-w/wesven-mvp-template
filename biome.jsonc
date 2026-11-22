@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.3.12/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.3.14/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -7,7 +7,11 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "includes": ["**/*.{ts,tsx,css,js,json,yaml,md}", "!**/.wesven"]
+    "includes": [
+      "**/*.{mts,mjs,ts,tsx,css,js,json,yaml,md}",
+      "!**/.wesven",
+      "!.claude"
+    ]
   },
   "formatter": {
     "enabled": true,
@@ -24,7 +28,8 @@
       "recommended": true,
       "correctness": {
         "useExhaustiveDependencies": "off",
-        "useImportExtensions": "off"
+        "useImportExtensions": "off",
+        "noUnusedImports": "error"
       },
       "suspicious": {
         "noConsole": {
@@ -38,6 +43,28 @@
         "useIterableCallbackReturn": "off",
         "noUnknownAtRules": "error",
         "noVar": "error"
+      },
+      "style": {
+        "noRestrictedImports": {
+          "level": "error",
+          "options": {
+            "patterns": [
+              {
+                "group": [
+                  "@/components",
+                  "@/components/**",
+                  "@/utils",
+                  "@/utils/**",
+                  "@/hooks/**",
+                  "@/instances/**",
+                  "@/app/actions",
+                  "@/app/actions/**"
+                ],
+                "message": "Use the canonical path aliases (@/element, @/module, @/feature, @/layout, @/util, @/hook, @/instance, @/action)."
+              }
+            ]
+          }
+        }
       }
     }
   },
@@ -104,5 +131,73 @@
         }
       }
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["src/components/elements/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["@/module/**", "@/feature/**", "@/layout/**"],
+                    "message": "Elements must not import modules, layouts or features (layer boundary)."
+                  },
+                  {
+                    "group": [
+                      "@/components",
+                      "@/components/**",
+                      "@/utils",
+                      "@/utils/**",
+                      "@/hooks/**",
+                      "@/instances/**",
+                      "@/app/actions",
+                      "@/app/actions/**"
+                    ],
+                    "message": "Use the canonical path aliases (@/element, @/module, @/feature, @/layout, @/util, @/hook, @/instance, @/action)."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/components/modules/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["@/feature/**", "@/layout/**"],
+                    "message": "Modules must not import layouts or features (layer boundary)."
+                  },
+                  {
+                    "group": [
+                      "@/components",
+                      "@/components/**",
+                      "@/utils",
+                      "@/utils/**",
+                      "@/hooks/**",
+                      "@/instances/**",
+                      "@/app/actions",
+                      "@/app/actions/**"
+                    ],
+                    "message": "Use the canonical path aliases (@/element, @/module, @/feature, @/layout, @/util, @/hook, @/instance, @/action)."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
 }
