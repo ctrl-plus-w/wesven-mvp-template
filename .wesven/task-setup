@@ -1,0 +1,122 @@
+#!/bin/sh
+# Runs inside a new task worktree, before its session starts. Must be safe to run twice.
+# COMPOSE_PROJECT_NAME is this task's own Docker Compose project, so docker compose in the task
+# leaves the main checkout's containers alone. To reach those, drop it for that one command:
+#   env -u COMPOSE_PROJECT_NAME docker compose -f "$WESVEN_MAIN_DIR/compose.yaml" exec db …
+# Context: WESVEN_MAIN_DIR WESVEN_TASK_DIR WESVEN_TASK_ID WESVEN_TASK_SLUG WESVEN_TASK_BRANCH
+#          WESVEN_PROJECT WESVEN_PORT_BASE (ports WESVEN_PORT_BASE to +9 belong to this task;
+#          the first 5 are forwarded to the laptop).
+set -eu
+
+# Submodules. A clone cut off half way (no commit checked out) stops every later update: drop it so
+# it is cloned again. A commit not pushed yet is fetched from the main checkout's copy (on a server,
+# whose main checkout is a clone, it has to be pushed from the machine that made it).
+modules="$(git rev-parse --absolute-git-dir)/modules"
+git config -f .gitmodules --get-regexp '^submodule\..*\.path$' | while read -r _ path; do
+  [ -f "$path/.git" ] && ! git -C "$path" rev-parse -q --verify HEAD >/dev/null 2>&1 || continue
+  if gitdir=$(git -C "$path" rev-parse --absolute-git-dir 2>/dev/null); then
+    case $gitdir in "$modules"/*) ;; *) continue ;; esac
+    rm -rf "$gitdir"
+  fi
+  echo "Cloning $path again: its last clone was cut off." >&2
+  rm -f "$path/.git"
+done
+if ! git submodule update --init --recursive; then
+  echo "Fetching the submodule commits their remotes lack from the main checkout." >&2
+  git submodule foreach --quiet --recursive \
+    'git -c protocol.file.allow=always fetch --quiet "$WESVEN_MAIN_DIR/$displaypath" "$sha1" || :'
+  if ! git submodule update --init --recursive; then
+    echo "Updating the submodules failed: the git error above says why. If it names a commit not pushed yet, push it from the machine that has it. Then run setup again." >&2
+    exit 1
+  fi
+fi
+
+# ignored FILE: git ignores FILE, so no commit in this task can publish it.
+ignored() { git check-ignore -q "$1"; }
+
+# Env files: copy the main checkout's, but only those git ignores here (a commit could publish the others).
+for src in "$WESVEN_MAIN_DIR"/.env*; do
+  [ -f "$src" ] || continue
+  name=$(basename "$src")
+  case "$name" in *.example | *.sample | *.template) continue ;; esac
+  if [ -f "$name" ]; then
+    continue
+  elif ignored "$name"; then
+    cp "$src" "$name"
+  else
+    echo "Not copying $name: git does not ignore it, so a commit could publish it." >&2
+  fi
+done
+if [ ! -f .env ] && [ -f .env.example ] && ignored .env; then cp .env.example .env; fi
+
+# The env files a dev server reads (Next.js and Vite read these four, each in its own order).
+env_files=".env .env.development .env.local .env.development.local"
+
+# set_env KEY VALUE: sets KEY in every env file here that has it, so the one that wins has the
+# value, else adds it to .env. Writes only to files git ignores: a commit could publish the others.
+set_env() {
+  found=
+  for file in $env_files; do
+    [ -f "$file" ] && grep -q "^$1=" "$file" || continue
+    found=1
+    if ignored "$file"; then
+      sed -i.bak "s|^$1=.*|$1=$2|" "$file" && rm -f "$file.bak"
+    else
+      echo "Not setting $1 in $file: git does not ignore it." >&2
+    fi
+  done
+  [ -z "$found" ] || return 0
+  if ignored .env; then
+    printf "%s=%s\n" "$1" "$2" >> .env
+  else
+    echo "Not setting $1: git does not ignore .env." >&2
+  fi
+}
+
+# move_port FROM TO: points the localhost URLs of the env files at port TO instead of FROM.
+move_port() {
+  for file in $env_files; do
+    [ -f "$file" ] && grep -Eq "(localhost|127\.0\.0\.1):$1([^0-9]|\$)" "$file" || continue
+    if ignored "$file"; then
+      sed -i.bak -E "s#(localhost|127\.0\.0\.1):$1([^0-9]|\$)#\1:$2\2#g" "$file" && rm -f "$file.bak"
+    else
+      echo "Not moving port $1 in $file: git does not ignore it." >&2
+    fi
+  done
+}
+
+# Ports: PORT is the task URL; other services take the ports that stay on the server.
+# BETTER_AUTH_URL, NEXT_PUBLIC_APP_URL reach the app on localhost:3000.
+set_env PORT "$WESVEN_PORT_BASE"
+move_port 3000 "$WESVEN_PORT_BASE"
+# No port variable holds the localhost ports these reach, so they keep them: DATABASE_URL.
+# DATABASE_URL keeps the main checkout's database, so a migration run in a task changes it too.
+# start-database.sh names its container after the database: a task database of its own needs another
+# database name as well as another port, or the script reuses the main checkout's container.
+
+# Node: the one this task's shells run, so the modules installed here load in them. With fnm, the
+# version in .nvmrc (installed when missing): fnm's shell hook switches the shells to it too.
+# Without fnm nothing switches them (nvm keeps its default Node), so the install keeps the Node in PATH.
+if command -v fnm >/dev/null 2>&1; then
+  eval "$(fnm env --shell bash)"
+  fnm use --install-if-missing
+else
+  want=$(tr -d ' \t\r\n' < .nvmrc)
+  have=$(node --version 2>/dev/null || echo none)
+  case $have in
+    "v${want#v}" | "v${want#v}".*) ;;
+    *) echo "fnm is not installed: this task installs and runs on Node $have from PATH, not the $want in .nvmrc." >&2 ;;
+  esac
+fi
+
+# need TOOL…: stops setup, naming the tool, when one is not installed here.
+need() {
+  for tool; do
+    command -v "$tool" >/dev/null 2>&1 && continue
+    echo "$tool is not installed here: install it, or change the install step of .wesven/task-setup." >&2
+    exit 127
+  done
+}
+need pnpm
+pnpm install --frozen-lockfile
+
