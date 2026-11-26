@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:vercel": "tsx src/scripts/vercel-build.ts",
     "start": "next start",
+    "deploy:setup": "tsx src/scripts/deploy/setup.ts",
+    "deploy:check": "tsx src/scripts/deploy/check.ts",
     "lint": "npm-run-all _biome:check _check-types",
     "_biome:format": "biome format --write --diagnostic-level=warn",
     "_biome:check": "biome check --write --unsafe --diagnostic-level=warn",
@@ -44,6 +47,7 @@
     "@hookform/resolvers": "^5.2.2",
     "@neondatabase/serverless": "^0.9.5",
     "@next/env": "16.4.5",
+    "@posthog/nextjs-config": "^1.12.2",
     "@react-email/components": "^1.0.0",
     "@stylexjs/stylex": "^0.19.0",
     "@tanstack/react-query": "^5.90.2",
@@ -59,7 +63,7 @@
     "next": "16.4.5",
     "pg-tsquery": "^8.4.2",
     "postgres": "^3.4.4",
-    "posthog-js": "^1.298.1",
+    "posthog-js": "^1.455.4",
     "posthog-node": "^5.74.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
@@ -72,6 +76,7 @@
   "devDependencies": {
     "@astryxdesign/cli": "^0.5.2",
     "@biomejs/biome": "2.3.14",
+    "@clack/prompts": "^1.9.0",
     "@faker-js/faker": "^10.2.0",
     "@react-email/preview-server": "5.0.1",
     "@testing-library/dom": "^10.4.1",
@@ -101,7 +106,7 @@
   },
   "packageManager": "pnpm@10.34.9",
   "engines": {
-    "node": ">=22.13.0",
+    "node": "^22.13.0",
     "pnpm": ">=10.26.0"
   }
 }

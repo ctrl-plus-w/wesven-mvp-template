@@ -11,6 +11,7 @@ allowBuilds:
   # Reviewed and denied: they only print a message, or copy files this project does not use.
   '@astryxdesign/cli': false
   '@astryxdesign/core': false
+  '@posthog/cli': false # downloads its binary on first run instead, so only a build that uploads source maps fetches it
   core-js: false
   msw: false
   protobufjs: false
@@ -21,6 +22,7 @@ overrides:
   '@vercel/blob>undici': ^6.29.1 # DoS, TLS certificate validation bypass
   '@vercel/cli-config>zod': ^4.6.6 # @vercel/blob>@vercel/oidc pins 4.1.11 — memory exhaustion (GHSA-mrhx-c7xc-m3w5)
   browserslist: ^4.28.7 # next>styled-jsx>@babel/core
+  fast-uri: ^3.1.9 # @posthog/nextjs-config>webpack>schema-utils>ajv (build time only) — host confusion, SSRF
   protobufjs: ^7.6.1 # posthog-js OTLP transformer — RCE (GHSA-wcpc-wj8m-hjx6)
   # --- dev/test-only toolchain (reached through better-auth's optional `vitest` peer) ---
   form-data: ^4.0.6

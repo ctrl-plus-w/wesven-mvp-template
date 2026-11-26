@@ -171,6 +171,13 @@ This category covers general coding style and practices to ensure consistency an
 - `pnpm run db:studio` — Open Drizzle Studio to browse the database
 - `pnpm run db:empty-migration` — Create an empty custom migration
 
+## Deployment Commands
+
+- `pnpm run deploy:setup` — Interactive setup of Vercel production (project, Neon, Blob, env vars) and the GitHub deploy job, then the first deploy. Re-runnable: finished steps are skipped
+- `pnpm run deploy:check` — CI preflight: fails with the name of every missing deploy setting or Production variable
+
+A new required key in `src/utils/schemas/env*.ts` is picked up by both commands automatically. Only add it to `src/constants/deploy.ts` when Vercel provides or derives it (`PROVIDED`, `DERIVED`), or when production needs its own random value instead of the `.env` one (`GENERATED`: `deploy:setup` creates it).
+
 ## Environment Setup
 
 1. Copy `.env.example` to `.env` and fill in the values

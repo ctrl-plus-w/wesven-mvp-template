@@ -12,6 +12,9 @@ import ENV from '@/env';
 import * as schema from '@/schemas';
 
 const auth = betterAuth({
+  // Passed explicitly: Better Auth would otherwise read `process.env.BETTER_AUTH_URL` and miss the Vercel fallback.
+  baseURL: ENV.BETTER_AUTH_URL,
+
   // These run through the server actions in `@/action/auth`, which throttle them per email. Their HTTP routes would
   // be a way around that throttle, so they answer 404.
   disabledPaths: ['/sign-up/email', '/sign-in/email', '/request-password-reset'],

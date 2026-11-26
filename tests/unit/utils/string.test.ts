@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { formatCurrency, getExt, isHex, withQueryParams } from '@/util/string';
+import { formatCurrency, getExt, isHex, toHttpsUrl, withQueryParams } from '@/util/string';
 
 describe('String Utilities', () => {
   beforeEach(() => {
@@ -63,6 +63,17 @@ describe('String Utilities', () => {
       expect(result).toContain('1');
       expect(result).toContain('234');
       expect(result).toContain('€');
+    });
+  });
+
+  describe('toHttpsUrl', () => {
+    it('prefixes a bare host with https', () => {
+      expect(toHttpsUrl('app.example.com')).toBe('https://app.example.com');
+    });
+
+    it('returns undefined without a host', () => {
+      expect(toHttpsUrl(undefined)).toBeUndefined();
+      expect(toHttpsUrl('')).toBeUndefined();
     });
   });
 });

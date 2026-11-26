@@ -20,7 +20,7 @@ A production-ready Next.js starter template with authentication, database, and t
 
 ### Prerequisites
 
-- Node.js >= 22.13 (see `.nvmrc`; the Astryx CLI enforces this floor)
+- Node.js 22, from 22.13 (see `.nvmrc`; the Astryx CLI enforces this floor, and `engines` pins the major Vercel builds with)
 - pnpm 10.26+ (pinned through `packageManager`; `corepack enable` picks it up)
 - Docker
 
@@ -95,6 +95,8 @@ drizzle/            # Auto-generated database migrations
 | `pnpm run test:unit`        | Run unit tests                                  |
 | `pnpm run test:integration` | Run integration tests (requires Docker DB)      |
 | `pnpm run test:e2e`         | Run E2E tests (requires Docker DB + built app)  |
+| `pnpm run deploy:setup`     | Set up Vercel production and the GitHub deploy  |
+| `pnpm run deploy:check`     | Check the deploy settings (run by CI)           |
 
 ## Authentication
 
@@ -115,72 +117,56 @@ Three levels of testing are available:
 
 ## Deployment
 
-This template deploys via **GitHub Actions running the Vercel CLI** to **Vercel hosting** with a **Vercel-managed Neon Postgres** database. CI is the single source of production deploys, so no untested code ever ships.
+Production runs on **Vercel** with a **Vercel-managed Neon Postgres** database and a **Vercel Blob** store. GitHub Actions is the only deploy path: a push to `main` runs lint and every test suite, and only a green run deploys.
 
-### One-time setup
+### One-command setup
 
-1. **Use this template** on GitHub (`Use this template → Create a new repository`) or fork it.
+Prerequisites: the [GitHub CLI](https://cli.github.com), and a repository on GitHub created from this template that the `origin` remote points to.
 
-2. **Create a Vercel project** pointing at your fork (https://vercel.com/new). Framework preset: Next.js. Then **disable Vercel's auto-deploy on push** so CI is the only deploy path:
+```bash
+pnpm deploy:setup
+```
 
-   > Project → Settings → Git → "Ignored Build Step" → set to `exit 0`.
+The setup walks through each step on screen and skips what already exists, so it is safe to run again after a failure. It:
 
-   Without this, every push to `main` will deploy twice (once via Vercel's git integration, once via this workflow).
+1. Logs in to GitHub and Vercel when needed, then creates the Vercel project and links this folder (`.vercel/`, git-ignored). When the team already has a project with that name, it asks before taking it over. It sets the Next.js preset, the Node major of `.nvmrc`, and the system variables.
+2. Creates a free Neon database connected to Production only, in the region you pick, and moves the functions to that region. It then offers a Blob store in the same region and a custom domain (it prints the DNS records the domain still needs).
+3. Fills every Production variable the env schemas (`src/utils/schemas/env*.ts`) require:
+   - `BETTER_AUTH_SECRET` and `CRON_SECRET` are generated, never copied from development.
+   - It lists the real values found in your shell and `.env`, and copies the ones you keep ticked. Placeholders, `localhost` values and values the schema rejects are skipped.
+   - It asks for the rest, hiding secrets and checking each value against the schema.
+   - `BETTER_AUTH_URL` and `NEXT_PUBLIC_APP_URL` stay unset. The app reads Vercel's production domain instead.
+4. Optionally, it turns on source-map upload to PostHog and deploy markers on PostHog charts. Give it a personal API key made for this alone (scopes `error_tracking:write` and `annotation:write`): Vercel stores it as a Sensitive variable, which the running app can read too.
+5. Stores what GitHub needs and nothing more:
+   - the `VERCEL_TOKEN` secret, in the `ci-cd` environment, which it creates restricted to `main`. GitHub Free has no environments for a private repository, so there the secret goes to the repository instead;
+   - the `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` and `DEPLOYMENT_ENABLED=true` variables;
+   - with PostHog, the `POSTHOG_ANNOTATIONS_API_KEY` secret and the `POSTHOG_PROJECT_ID` and `POSTHOG_APP_HOST` variables.
 
-3. **Provision Neon Postgres** via Vercel:
+   The token is created for you, limited to the project, when the Vercel login allows it. Otherwise the setup asks you to paste one from https://vercel.com/account/tokens: scope it to the project.
+6. Starts the pipeline on `main` and follows it until the app is live. When local `main` has unpushed commits it offers to push them, and that push is the run it follows.
 
-   > Project → Storage → Create Database → Neon (Marketplace) → attach to Production.
+Once GitHub deploys are enabled, a second run asks nothing it was answered before: it keeps the token, skips the Blob store, domain and PostHog offers you declined, and deploys only when it changed something or the last deploy failed. `pnpm deploy:setup --reconfigure` asks everything again.
 
-   This auto-injects `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `POSTGRES_URL`, `POSTGRES_URL_NON_POOLING`, `POSTGRES_PRISMA_URL`, and friends.
+Secrets are passed to `vercel` and `gh` through stdin, never on a command line, and the setup never prints them. The ids and other non-secret variables are plain arguments.
 
-4. **Set the remaining production env vars** in Vercel (Project → Settings → Environment Variables → Production):
+### How a deploy works
 
-   | Variable                   | Source                                                 |
-   | -------------------------- | ------------------------------------------------------ |
-   | `DATABASE_URL`             | auto-injected by Neon                                  |
-   | `DATABASE_URL_UNPOOLED`    | auto-injected by Neon                                  |
-   | `BLOB_READ_WRITE_TOKEN`    | auto-injected by Vercel Blob (Storage → Create → Blob) |
-   | `BETTER_AUTH_SECRET`       | `openssl rand -base64 32`                              |
-   | `BETTER_AUTH_URL`          | your production URL, e.g. `https://app.example.com`    |
-   | `NEXT_PUBLIC_APP_URL`      | same as `BETTER_AUTH_URL`                              |
-   | `RESEND_FROM_EMAIL`        | configured sender on https://resend.com                |
-   | `RESEND_API_KEY`           | from Resend dashboard                                  |
-   | `NEXT_PUBLIC_POSTHOG_KEY`  | from PostHog project settings                          |
-   | `NEXT_PUBLIC_POSTHOG_HOST` | `https://us.i.posthog.com` (or your region)            |
-   | `CRON_SECRET`              | optional, `openssl rand -base64 32` — see cron routes  |
+`lint` (audit, Biome, `tsc`) → `unit-tests` + `integration-tests` + `e2e-tests` → `deploy`.
 
-5. **Link the project locally** to grab the Vercel org and project IDs:
+- The test jobs need no secret. They use the committed `.env.test` and fixed test values, so they also run on pull requests from forks.
+- `deploy` first runs `pnpm deploy:check`, which names any missing token, id or Production variable. It then calls `vercel deploy --prod`, so Vercel builds the commit with its own environment variables. Sensitive values stay readable at build time this way, which `vercel pull` cannot do.
+- On Vercel, `pnpm build:vercel` builds the app and then applies pending migrations through `DATABASE_URL_UNPOOLED`. A failed `next build` leaves the database untouched. A failed migration fails the deploy, and the previous version keeps serving. Migrations commit before Vercel uploads the build, so a deploy that fails after them leaves the schema ahead of the live version: keep each migration backward compatible (add a column first, drop the old one in a later deploy).
+- The source-map upload never fails the build. When PostHog cannot be reached the build goes on without them, and maps that did not upload are deleted rather than served.
+- `vercel.json` turns off Vercel's own Git deploys, so each push deploys once. It also forces the build to run even when the project has an Ignored Build Step.
+- Without `DEPLOYMENT_ENABLED=true`, CI runs lint and tests only.
 
-   ```bash
-   pnpm dlx vercel link
-   cat .vercel/project.json   # contains orgId and projectId
-   ```
+To deploy again without a new commit, run the **CI/CD** workflow from the Actions tab (`workflow_dispatch`).
 
-   (Alternatively, copy them from Vercel: Account Settings → org ID; Project Settings → project ID.)
+### Projects set up before `deploy:setup`
 
-6. **Create the `ci-cd` GitHub environment** (Repo → Settings → Environments → New environment → `ci-cd`) and add these **Environment secrets**:
-   - `VERCEL_TOKEN` — generate at https://vercel.com/account/tokens
-   - `VERCEL_ORG_ID` — from step 5
-   - `VERCEL_PROJECT_ID` — from step 5
-   - `DATABASE_URL` — copy from Vercel project env
-   - `DATABASE_URL_UNPOOLED` — copy from Vercel project env (used by the `migrate` job for DDL)
-   - `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `NEXT_PUBLIC_APP_URL`
-   - `RESEND_FROM_EMAIL`, `RESEND_API_KEY`
-   - `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST`
+- They keep working: `VERCEL_ORG_ID` and `VERCEL_PROJECT_ID` are still read from the `ci-cd` secrets when the variables are missing.
+- The `DATABASE_URL*`, `BETTER_AUTH_*`, `NEXT_PUBLIC_*` and `RESEND_*` GitHub secrets are no longer read, and can be deleted. Production reads them from Vercel.
+- Source maps now upload during the Vercel build. Add `POSTHOG_SOURCEMAPS_API_KEY`, `POSTHOG_PROJECT_ID` and `POSTHOG_APP_HOST` to the Vercel Production variables. In GitHub, the key only marks deploys now, under `POSTHOG_ANNOTATIONS_API_KEY` or its old name.
+- Add `ENABLE_EXPERIMENTAL_COREPACK=1` to Production, so Vercel installs the pnpm version in `packageManager`.
+- `pnpm deploy:setup` adds the missing variables for you. It deletes nothing.
 
-7. **Enable deploys** by adding a repo **Variable** (not a Secret):
-
-   > Repo → Settings → Secrets and variables → Actions → **Variables** tab → New repository variable: `DEPLOYMENT_ENABLED=true`.
-
-   The `migrate` and `deploy` jobs are gated on this variable, so without it CI runs lint + tests only.
-
-   Optional, for readable production stack traces and deploy markers in PostHog:
-   - Variables `POSTHOG_PROJECT_ID` (the numeric id in your PostHog project URL) and `POSTHOG_APP_HOST`
-     (`https://us.posthog.com` by default, `https://eu.posthog.com` for EU).
-   - Secret `POSTHOG_SOURCEMAPS_API_KEY` — a personal API key with `error_tracking:write` (and `annotation:write`
-     to also mark deploys; or set a separate `POSTHOG_ANNOTATIONS_API_KEY`). With it, the deploy job builds browser
-     source maps, uploads them to PostHog, and deletes them before the output ships.
-
-8. **Push to `main`.** CI runs `lint` (install, `pnpm audit --prod --audit-level=critical`, Biome, `tsc`) → `unit-tests` + `integration-tests` + `e2e-tests` (parallel) → `migrate` → `deploy`. The first green run publishes the app.
-
-   `BETTER_AUTH_SECRET` must be at least 32 characters in the `ci-cd` environment too, or the test jobs fail at startup.

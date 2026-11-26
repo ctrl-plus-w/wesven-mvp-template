@@ -42,3 +42,11 @@ export const withQueryParams = (url: string, params: URLSearchParams) => {
 export const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('fr', { currency: 'EUR', style: 'currency' }).format(value);
 };
+
+/**
+ * Turn a bare host, such as Vercel's `VERCEL_PROJECT_PRODUCTION_URL`, into an https URL
+ * @param host The host without a protocol, or undefined when unset
+ */
+export const toHttpsUrl = (host: string | undefined) => {
+  return host ? `https://${host}` : undefined;
+};

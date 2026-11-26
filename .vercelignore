@@ -1,0 +1,16 @@
+# `vercel deploy` uploads what this file does not exclude: it never reads .gitignore. CI deploys a clean checkout, so
+# this only matters for a deploy started from a working copy, where the local secrets .gitignore keeps out must stay
+# behind too.
+.env
+.env.*
+!.env.example
+_.env
+_.env.*
+*.pem
+cypress.env.json
+sync-db.sh
+/postgres
+.next-test
+tests/cypress/logs
+tests/cypress/screenshots
+tests/cypress/videos
