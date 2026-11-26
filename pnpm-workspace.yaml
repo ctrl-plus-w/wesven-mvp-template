@@ -1,10 +1,8 @@
 verifyDepsBeforeRun: false
 
 # Only the packages set to `true` may run install scripts (preinstall/postinstall/prepare). A new dependency
-# that ships one has it skipped until it is reviewed and listed here. A git-hosted package is approved by the
-# exact tarball it resolves to, so bumping `@wesven/testing` means updating its commit hash here too.
+# that ships one has it skipped until it is reviewed and listed here.
 allowBuilds:
-  '@wesven/testing@https://codeload.github.com/ctrl-plus-w/wesven-testing/tar.gz/f79abb65316cdb413c728b9fdd1336d5ccfa9d32': true
   cypress: true # downloads the Cypress binary
   esbuild: true # installs the platform binary
   sharp: true # falls back to a source build when no prebuilt libvips matches

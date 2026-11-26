@@ -89,7 +89,7 @@
     "@vitejs/plugin-react": "^5.1.1",
     "@vitest/coverage-v8": "^3.2.7",
     "@vitest/ui": "^3.2.7",
-    "@wesven/testing": "github:ctrl-plus-w/wesven-testing#v0.1.9",
+    "@wesven/testing": "https://github.com/ctrl-plus-w/wesven-testing/releases/download/v0.2.0/wesven-testing-0.2.0.tgz",
     "baseline-browser-mapping": "^2.9.19",
     "cross-env": "^7.0.3",
     "cypress": "^15.6.0",
